@@ -77,12 +77,6 @@ A GitHub App installation token is fetched, cached and renewed by `GitHubInstall
 settings (base URI, timeouts, retries) and adds the pagination limits (`perPage` and `maxPages`) and, for GitHub
 Enterprise Server, the flavor and release. Without a configuration the client talks to `https://api.github.com/`.
 
-## Build
+## License
 
-```bash
-mvn clean verify
-```
-
-## Disclaimer
-
-This library is new and not yet proven in production. Verify the behavior you depend on before using it there.
+[MIT](LICENSE)
