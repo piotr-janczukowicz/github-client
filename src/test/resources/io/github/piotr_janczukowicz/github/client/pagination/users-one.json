@@ -1,0 +1,22 @@
+[
+  {
+    "login": "one",
+    "id": 1,
+    "node_id": "n1",
+    "avatar_url": "https://example.com/a",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/one",
+    "html_url": "https://github.com/one",
+    "followers_url": "https://api.github.com/users/one/followers",
+    "following_url": "https://api.github.com/users/one/following{/other_user}",
+    "gists_url": "https://api.github.com/users/one/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/one/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/one/subscriptions",
+    "organizations_url": "https://api.github.com/users/one/orgs",
+    "repos_url": "https://api.github.com/users/one/repos",
+    "events_url": "https://api.github.com/users/one/events{/privacy}",
+    "received_events_url": "https://api.github.com/users/one/received_events",
+    "type": "User",
+    "site_admin": false
+  }
+]

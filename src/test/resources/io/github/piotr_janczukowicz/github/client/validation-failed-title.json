@@ -1,0 +1,6 @@
+{
+  "message": "Validation Failed",
+  "errors": [
+    {"field": "title", "code": "missing_field", "message": "title cannot be empty"}
+  ]
+}
