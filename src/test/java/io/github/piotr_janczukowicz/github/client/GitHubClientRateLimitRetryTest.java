@@ -21,6 +21,7 @@ import static org.mockito.Mockito.when;
 
 import io.github.piotr_janczukowicz.github.client.exception.GitHubForbiddenException;
 import io.github.piotr_janczukowicz.github.client.exception.GitHubRateLimitException;
+import io.github.piotr_janczukowicz.github.client.internal.DefaultGitHubClient;
 import io.github.piotr_janczukowicz.github.client.ratelimit.GitHubRateLimitDetector;
 import io.github.piotr_janczukowicz.github.client.ratelimit.GitHubRateLimitInfo;
 import io.github.piotr_janczukowicz.github.client.ratelimit.GitHubRateLimitSnapshot;

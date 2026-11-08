@@ -12,6 +12,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.github.piotr_janczukowicz.github.client.internal.ClientStacks;
+import io.github.piotr_janczukowicz.github.client.internal.DefaultGitHubClient;
 import io.github.piotr_janczukowicz.github.client.ratelimit.GitHubRateLimitListener;
 import io.github.piotr_janczukowicz.http.HttpBody;
 import io.github.piotr_janczukowicz.http.HttpHeaders;
@@ -236,7 +238,7 @@ class GitHubClientsTest {
         final GitHubClientConfiguration configuration =
                 GitHubClientConfiguration.builder().configuration(withVersion).build();
 
-        final Throwable thrown = catchThrowable(() -> GitHubClients.assemble(
+        final Throwable thrown = catchThrowable(() -> ClientStacks.assemble(
                 transport,
                 TestClients.auth(),
                 TestClients.USER_AGENT,
@@ -252,7 +254,7 @@ class GitHubClientsTest {
     void assemble_shouldCloseTransport_whenMutationIntervalRejected() {
         final HttpTransport transport = HttpTransportMocks.mock();
 
-        final Throwable thrown = catchThrowable(() -> GitHubClients.assemble(
+        final Throwable thrown = catchThrowable(() -> ClientStacks.assemble(
                 transport,
                 TestClients.auth(),
                 TestClients.USER_AGENT,
@@ -271,7 +273,7 @@ class GitHubClientsTest {
                 .configuration(HttpClientConfiguration.builder(URI.create("http://ghe.example.test/api/v3/"))
                         .build())
                 .build();
-        final DefaultGitHubClient.Builder builder = GitHubClients.assemble(
+        final DefaultGitHubClient.Builder builder = ClientStacks.assemble(
                 transport,
                 TestClients.auth(),
                 TestClients.USER_AGENT,
@@ -511,7 +513,7 @@ class GitHubClientsTest {
     }
 
     private static HttpTransport retryingOver(final HttpTransport delegate, final RetryConfiguration retry) {
-        return GitHubClients.retrying(delegate, retry);
+        return ClientStacks.retrying(delegate, retry);
     }
 
     private static List<HttpMethod> methods(final ScriptedTransport transport) {

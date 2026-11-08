@@ -1,4 +1,4 @@
-package io.github.piotr_janczukowicz.github.client;
+package io.github.piotr_janczukowicz.github.client.internal;
 
 import static io.github.piotr_janczukowicz.http.HttpHeaderNames.LOCATION;
 import static io.github.piotr_janczukowicz.util.ValidationUtils.requireNonNull;
@@ -15,7 +15,7 @@ import org.jspecify.annotations.Nullable;
  * Maps the error responses of GitHub to {@link GitHubApiException}s, see {@link GitHubErrors}. It uses {@code clock},
  * the same clock that stamps the rate-limit quota of the client, and parses error bodies with the default JSON codec.
  */
-final class GitHubErrorMapper implements HttpErrorMapper {
+public final class GitHubErrorMapper implements HttpErrorMapper {
 
     private final Clock clock;
 

@@ -1,4 +1,4 @@
-package io.github.piotr_janczukowicz.github.client;
+package io.github.piotr_janczukowicz.github.client.internal;
 
 import static io.github.piotr_janczukowicz.github.GitHubHeaders.API_VERSION;
 import static io.github.piotr_janczukowicz.github.GitHubHeaders.SSO;
@@ -27,6 +27,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.github.piotr_janczukowicz.github.client.GitHubCaller;
+import io.github.piotr_janczukowicz.github.client.GitHubClient;
+import io.github.piotr_janczukowicz.github.client.GitHubFlavor;
+import io.github.piotr_janczukowicz.github.client.GitHubSsoHeaders;
+import io.github.piotr_janczukowicz.github.client.TestGitHubClients;
 import io.github.piotr_janczukowicz.github.client.exception.GitHubApiException;
 import io.github.piotr_janczukowicz.github.client.exception.GitHubForbiddenException;
 import io.github.piotr_janczukowicz.github.client.exception.GitHubUnauthorizedException;

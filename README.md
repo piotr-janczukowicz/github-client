@@ -10,7 +10,7 @@ Enterprise Cloud and GitHub Enterprise Server, with GitHub's error mapping and p
 [![Codacy Coverage](https://app.codacy.com/project/badge/Coverage/d6fd9e7bad624917b41ca4b1d0dcfd1a)](https://app.codacy.com/gh/piotr-janczukowicz/github-client/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_coverage)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/d6fd9e7bad624917b41ca4b1d0dcfd1a)](https://app.codacy.com/gh/piotr-janczukowicz/github-client/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 
-## What it does
+## Features
 
 - **Authentication.** Bearer tokens, basic authentication, GitHub App JWTs and GitHub App installation tokens, which are
   cached and renewed before they expire.

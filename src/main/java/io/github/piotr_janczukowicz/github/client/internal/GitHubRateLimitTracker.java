@@ -1,4 +1,4 @@
-package io.github.piotr_janczukowicz.github.client;
+package io.github.piotr_janczukowicz.github.client.internal;
 
 import static io.github.piotr_janczukowicz.util.ValidationUtils.requireNonNull;
 
@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
  * can go up as well as down within a window, so the most recently received snapshot of a window is kept, not the
  * smallest.
  */
-final class GitHubRateLimitTracker {
+public final class GitHubRateLimitTracker {
 
     private static final Logger LOG = LoggerFactory.getLogger(GitHubRateLimitTracker.class);
 

@@ -58,7 +58,7 @@ public final class GitHubSsoHeaders {
      * @return the link, or empty when the header is absent or has no {@code url=}
      * @throws NullPointerException if {@code headers} is {@code null}
      */
-    static Optional<String> authorizationUrl(final HttpHeaders headers) {
+    public static Optional<String> authorizationUrl(final HttpHeaders headers) {
         requireNonNull(headers, HEADERS_PARAMETER);
         return headers.get(GitHubHeaders.SSO).flatMap(value -> Optional.ofNullable(urlOf(value)));
     }
@@ -71,7 +71,7 @@ public final class GitHubSsoHeaders {
      * @param headers response headers
      * @throws NullPointerException if {@code headers} is {@code null}
      */
-    static void logPartialResults(final HttpHeaders headers) {
+    public static void logPartialResults(final HttpHeaders headers) {
         requireNonNull(headers, HEADERS_PARAMETER);
         headers.get(GitHubHeaders.SSO)
                 .filter(GitHubSsoHeaders::isPartialResults)

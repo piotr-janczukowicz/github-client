@@ -1,4 +1,4 @@
-package io.github.piotr_janczukowicz.github.client;
+package io.github.piotr_janczukowicz.github.client.internal;
 
 import static io.github.piotr_janczukowicz.util.ValidationUtils.requireNonNull;
 
@@ -17,11 +17,11 @@ import org.jspecify.annotations.Nullable;
 // S1075: these paths are fixed parts of GitHub Enterprise Server's API, not deployment settings; a host
 // cannot serve them anywhere else, so a configurable parameter would only allow wrong values.
 @SuppressWarnings("java:S1075")
-record GitHubApiBase(URI uri) {
+public record GitHubApiBase(URI uri) {
 
-    static final String GHES_API_PATH = "/api/v3/";
-    static final String GHES_UPLOADS_PATH = "/api/uploads/";
-    static final String MANAGE_PATH = "/manage/v1/";
+    public static final String GHES_API_PATH = "/api/v3/";
+    public static final String GHES_UPLOADS_PATH = "/api/uploads/";
+    public static final String MANAGE_PATH = "/manage/v1/";
 
     private static final String GITHUB_API_HOST = "api.github.com";
     private static final String GITHUB_UPLOADS_HOST = "uploads.github.com";
@@ -29,7 +29,7 @@ record GitHubApiBase(URI uri) {
     private static final String DATA_RESIDENCY_SUFFIX = ".ghe.com";
     private static final String UPLOADS_HOST_PREFIX = "uploads.";
 
-    GitHubApiBase {
+    public GitHubApiBase {
         requireNonNull(uri, "uri");
     }
 
@@ -39,7 +39,7 @@ record GitHubApiBase(URI uri) {
      *
      * @return {@code true} for a GitHub Enterprise Server API base URI
      */
-    boolean isGhes() {
+    public boolean isGhes() {
         return GHES_API_PATH.equals(uri.getPath());
     }
 

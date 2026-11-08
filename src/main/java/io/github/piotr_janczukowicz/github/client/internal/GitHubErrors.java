@@ -1,9 +1,10 @@
-package io.github.piotr_janczukowicz.github.client;
+package io.github.piotr_janczukowicz.github.client.internal;
 
 import static io.github.piotr_janczukowicz.util.StringUtils.isBlank;
 import static io.github.piotr_janczukowicz.util.ValidationUtils.requireNonNull;
 
 import io.github.piotr_janczukowicz.github.GitHubErrorBody;
+import io.github.piotr_janczukowicz.github.client.GitHubSsoHeaders;
 import io.github.piotr_janczukowicz.github.client.exception.GitHubApiException;
 import io.github.piotr_janczukowicz.github.client.exception.GitHubForbiddenException;
 import io.github.piotr_janczukowicz.github.client.exception.GitHubNotFoundException;
@@ -27,7 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** Maps an unsuccessful response to a {@link GitHubApiException} subtype. */
-final class GitHubErrors {
+public final class GitHubErrors {
 
     /** Largest error body that is parsed as JSON; GitHub error objects are a few hundred bytes. */
     static final int MAX_JSON_BYTES = 1_048_576;

@@ -1,4 +1,4 @@
-package io.github.piotr_janczukowicz.github.client;
+package io.github.piotr_janczukowicz.github.client.internal;
 
 import static io.github.piotr_janczukowicz.http.HttpHeaderNames.ACCEPT;
 import static io.github.piotr_janczukowicz.http.HttpHeaderNames.USER_AGENT;
@@ -6,6 +6,12 @@ import static io.github.piotr_janczukowicz.util.ValidationUtils.requireNonNull;
 import static io.github.piotr_janczukowicz.util.ValidationUtils.requireNotBlank;
 
 import io.github.piotr_janczukowicz.github.GitHubHeaders;
+import io.github.piotr_janczukowicz.github.client.GhesVersion;
+import io.github.piotr_janczukowicz.github.client.GitHubClient;
+import io.github.piotr_janczukowicz.github.client.GitHubClientConfiguration;
+import io.github.piotr_janczukowicz.github.client.GitHubClients;
+import io.github.piotr_janczukowicz.github.client.GitHubFlavor;
+import io.github.piotr_janczukowicz.github.client.GitHubSsoHeaders;
 import io.github.piotr_janczukowicz.github.client.ratelimit.GitHubRateLimitListener;
 import io.github.piotr_janczukowicz.github.client.ratelimit.GitHubRateLimitSnapshot;
 import io.github.piotr_janczukowicz.http.HttpHeaders;
@@ -33,7 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** Package-private implementation of {@link GitHubClient}, built by {@link GitHubClients}. */
-final class DefaultGitHubClient extends HttpClient implements GitHubClient {
+public final class DefaultGitHubClient extends HttpClient implements GitHubClient {
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultGitHubClient.class);
 
@@ -118,7 +124,7 @@ final class DefaultGitHubClient extends HttpClient implements GitHubClient {
      * @throws NullPointerException if {@code userAgent} is {@code null}
      * @throws IllegalArgumentException if {@code userAgent} is blank or has other characters
      */
-    static String requireValidUserAgent(final String userAgent) {
+    public static String requireValidUserAgent(final String userAgent) {
         requireNotBlank(userAgent, USER_AGENT_PARAMETER);
         for (int i = 0; i < userAgent.length(); i++) {
             final char c = userAgent.charAt(i);
@@ -145,7 +151,7 @@ final class DefaultGitHubClient extends HttpClient implements GitHubClient {
      * @throws NullPointerException if an argument is {@code null}
      * @throws IllegalArgumentException if the default headers set {@code X-GitHub-Api-Version} or {@code User-Agent}
      */
-    static Builder builder(
+    public static Builder builder(
             final HttpTransport transport,
             final HttpClientConfiguration configuration,
             final AuthenticationProvider auth) {
@@ -171,7 +177,7 @@ final class DefaultGitHubClient extends HttpClient implements GitHubClient {
     }
 
     /** Client factory with a fixed transport, configuration and codec and an optional rate-limit listener. */
-    static final class Builder {
+    public static final class Builder {
         private final HttpTransport transport;
         private final HttpClientConfiguration configuration;
         private final AuthenticationProvider auth;
@@ -213,7 +219,7 @@ final class DefaultGitHubClient extends HttpClient implements GitHubClient {
          * @throws NullPointerException if {@code userAgent} is {@code null}
          * @throws IllegalArgumentException if {@code userAgent} is blank or has characters other than visible ASCII
          */
-        Builder userAgent(final String userAgent) {
+        public Builder userAgent(final String userAgent) {
             this.userAgent = requireValidUserAgent(userAgent);
             return this;
         }
@@ -225,7 +231,7 @@ final class DefaultGitHubClient extends HttpClient implements GitHubClient {
          * @return this builder
          * @throws NullPointerException if {@code pagination} is {@code null}
          */
-        Builder pagination(final PaginationConfiguration pagination) {
+        public Builder pagination(final PaginationConfiguration pagination) {
             this.pagination = requireNonNull(pagination, "pagination");
             return this;
         }
@@ -238,7 +244,7 @@ final class DefaultGitHubClient extends HttpClient implements GitHubClient {
          * @return this builder
          * @throws NullPointerException if {@code listener} is {@code null}
          */
-        Builder rateLimitListener(final GitHubRateLimitListener listener) {
+        public Builder rateLimitListener(final GitHubRateLimitListener listener) {
             this.rateLimitListener = requireNonNull(listener, "listener");
             return this;
         }
@@ -252,7 +258,7 @@ final class DefaultGitHubClient extends HttpClient implements GitHubClient {
          * @return this builder
          * @throws NullPointerException if {@code observer} is {@code null}
          */
-        Builder callObserver(final HttpCallObserver observer) {
+        public Builder callObserver(final HttpCallObserver observer) {
             this.callObserver = requireNonNull(observer, "observer");
             return this;
         }
@@ -267,7 +273,7 @@ final class DefaultGitHubClient extends HttpClient implements GitHubClient {
          * @param allowInsecureHttp {@code true} to accept a plain-http base URI on a non-loopback host
          * @return this builder
          */
-        Builder allowInsecureHttp(final boolean allowInsecureHttp) {
+        public Builder allowInsecureHttp(final boolean allowInsecureHttp) {
             this.isInsecureHttpAllowed = allowInsecureHttp;
             return this;
         }
@@ -278,7 +284,7 @@ final class DefaultGitHubClient extends HttpClient implements GitHubClient {
          * @param flavor flavor to enforce
          * @return this builder
          */
-        Builder flavor(final GitHubFlavor flavor) {
+        public Builder flavor(final GitHubFlavor flavor) {
             this.flavor = requireNonNull(flavor, "flavor");
             return this;
         }
@@ -289,7 +295,7 @@ final class DefaultGitHubClient extends HttpClient implements GitHubClient {
          * @param ghesVersion release to enforce
          * @return this builder
          */
-        Builder ghesVersion(final GhesVersion ghesVersion) {
+        public Builder ghesVersion(final GhesVersion ghesVersion) {
             this.ghesVersion = requireNonNull(ghesVersion, "ghesVersion");
             return this;
         }
@@ -304,7 +310,7 @@ final class DefaultGitHubClient extends HttpClient implements GitHubClient {
          * @apiNote A failed build, whether a setting is refused or the client cannot be constructed, closes the
          *     transport first, so a failed build of a root client leaves nothing open for the caller to release.
          */
-        DefaultGitHubClient build() {
+        public DefaultGitHubClient build() {
             try {
                 requireBuildable();
                 final GitHubRateLimitTracker tracker = new GitHubRateLimitTracker(rateLimitListener, clock);
@@ -342,7 +348,7 @@ final class DefaultGitHubClient extends HttpClient implements GitHubClient {
          * @return this builder
          * @throws NullPointerException if {@code clock} is {@code null}
          */
-        Builder clock(final Clock clock) {
+        public Builder clock(final Clock clock) {
             this.clock = requireNonNull(clock, "clock");
             return this;
         }

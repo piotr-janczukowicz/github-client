@@ -12,6 +12,8 @@ module io.github.piotr_janczukowicz.githubclient {
     exports io.github.piotr_janczukowicz.github.client;
     exports io.github.piotr_janczukowicz.github.client.app;
     exports io.github.piotr_janczukowicz.github.client.exception;
+    exports io.github.piotr_janczukowicz.github.client.internal to
+            io.github.piotr_janczukowicz.githubrestclient;
     exports io.github.piotr_janczukowicz.github.client.pagination;
     exports io.github.piotr_janczukowicz.github.client.ratelimit;
     exports io.github.piotr_janczukowicz.github.json;

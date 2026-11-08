@@ -3,6 +3,7 @@ package io.github.piotr_janczukowicz.github.client;
 import static io.github.piotr_janczukowicz.github.pagination.GitHubPageRequestKindValidators.requireAllowedPageRequestKind;
 import static io.github.piotr_janczukowicz.util.ValidationUtils.requireNonNull;
 
+import io.github.piotr_janczukowicz.github.client.internal.GitHubApiBase;
 import io.github.piotr_janczukowicz.github.client.pagination.GitHubListSpec;
 import io.github.piotr_janczukowicz.github.client.pagination.GitHubPageQueries;
 import io.github.piotr_janczukowicz.github.client.pagination.GitHubPageTarget;

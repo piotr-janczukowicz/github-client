@@ -1,4 +1,4 @@
-package io.github.piotr_janczukowicz.github.client;
+package io.github.piotr_janczukowicz.github.client.internal;
 
 import static io.github.piotr_janczukowicz.util.ValidationUtils.requireNonNull;
 
@@ -9,7 +9,7 @@ import java.net.URI;
 import org.jspecify.annotations.Nullable;
 
 /** API origin plus GitHub upload hosts ({@code uploads.github.com} / GHES). The management console is not allowed. */
-final class GitHubOriginGuard extends HttpOriginGuard {
+public final class GitHubOriginGuard extends HttpOriginGuard {
 
     private static final String HTTPS = "https";
 

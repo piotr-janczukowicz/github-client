@@ -1,5 +1,7 @@
 package io.github.piotr_janczukowicz.github.client;
 
+import io.github.piotr_janczukowicz.github.client.internal.ClientStacks;
+import io.github.piotr_janczukowicz.github.client.internal.DefaultGitHubClient;
 import io.github.piotr_janczukowicz.http.client.HttpClientConfiguration;
 import io.github.piotr_janczukowicz.http.client.authentication.AuthenticationProvider;
 import io.github.piotr_janczukowicz.http.transport.HttpTransport;
@@ -101,7 +103,7 @@ public final class TestGitHubClients {
             final Duration mutationInterval) {
         final MutableClock clock = new MutableClock(Instant.EPOCH);
         final List<Duration> sleeps = new ArrayList<>();
-        return GitHubClients.assemble(
+        return ClientStacks.assemble(
                         transport,
                         auth,
                         TestClients.USER_AGENT,
@@ -113,6 +115,6 @@ public final class TestGitHubClients {
     }
 
     public static HttpTransport retrying(final HttpTransport delegate, final RetryConfiguration retry) {
-        return GitHubClients.retrying(delegate, retry);
+        return ClientStacks.retrying(delegate, retry);
     }
 }

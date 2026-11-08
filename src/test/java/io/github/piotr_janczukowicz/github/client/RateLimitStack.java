@@ -1,5 +1,6 @@
 package io.github.piotr_janczukowicz.github.client;
 
+import io.github.piotr_janczukowicz.github.client.internal.DefaultGitHubClient;
 import io.github.piotr_janczukowicz.github.client.ratelimit.GitHubRateLimitDetector;
 import io.github.piotr_janczukowicz.github.client.ratelimit.GitHubRateLimitListener;
 import io.github.piotr_janczukowicz.http.client.authentication.AuthenticationProvider;

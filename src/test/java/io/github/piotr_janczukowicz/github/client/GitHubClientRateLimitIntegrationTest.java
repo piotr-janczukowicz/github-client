@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 
 import io.github.piotr_janczukowicz.github.client.exception.GitHubNotFoundException;
+import io.github.piotr_janczukowicz.github.client.internal.DefaultGitHubClient;
 import io.github.piotr_janczukowicz.github.client.ratelimit.GitHubRateLimitSnapshot;
 import io.github.piotr_janczukowicz.http.client.HttpCall;
 import io.github.piotr_janczukowicz.http.transport.HttpTransport;

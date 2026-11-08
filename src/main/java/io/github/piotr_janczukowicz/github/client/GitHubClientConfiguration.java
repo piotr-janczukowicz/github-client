@@ -4,6 +4,7 @@ import static io.github.piotr_janczukowicz.util.ValidationUtils.requireAtLeast;
 import static io.github.piotr_janczukowicz.util.ValidationUtils.requireBetween;
 import static io.github.piotr_janczukowicz.util.ValidationUtils.requireNonNull;
 
+import io.github.piotr_janczukowicz.github.client.internal.GitHubApiBase;
 import io.github.piotr_janczukowicz.github.client.ratelimit.GitHubRateLimitListener;
 import io.github.piotr_janczukowicz.http.client.HttpCallObserver;
 import io.github.piotr_janczukowicz.http.client.HttpClientConfiguration;
