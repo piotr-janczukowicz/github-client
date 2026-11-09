@@ -211,8 +211,7 @@ public final class GitHubClientConfiguration {
 
     /**
      * The GitHub flavor whose REST description the client is limited to. When set, a method that exists in other
-     * flavors only (see {@link io.github.piotr_janczukowicz.github.api.Flavors}) throws
-     * {@link UnsupportedOperationException} before any request is sent.
+     * flavors only (see {@code @Flavors}) throws {@link UnsupportedOperationException} before any request is sent.
      *
      * @return the flavor, or empty if the client does not check flavors (the default)
      */
@@ -222,8 +221,8 @@ public final class GitHubClientConfiguration {
 
     /**
      * The GitHub Enterprise Server release of a {@link GitHubFlavor#GHES} client. A method that exists only in some
-     * releases (see {@link io.github.piotr_janczukowicz.github.api.GhesVersions}) throws
-     * {@link UnsupportedOperationException} before any request is sent when the release is not among them.
+     * releases (see {@code @GhesVersions}) throws {@link UnsupportedOperationException} before any request is sent when
+     * the release is not among them.
      *
      * @return the release, or empty if the flavor is not {@link GitHubFlavor#GHES}
      */

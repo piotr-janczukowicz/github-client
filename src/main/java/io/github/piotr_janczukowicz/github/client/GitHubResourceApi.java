@@ -61,8 +61,7 @@ public abstract class GitHubResourceApi extends HttpResourceApi {
 
     /**
      * Rejects the call before any request when the client is limited to a flavor that does not carry the operation, see
-     * {@link GitHubClientConfiguration#flavor()}. Methods annotated with
-     * {@link io.github.piotr_janczukowicz.github.api.Flavors} call it first.
+     * {@link GitHubClientConfiguration#flavor()}. Methods annotated with {@code @Flavors} call it first.
      *
      * @param available flavors whose REST description carries the operation
      * @throws UnsupportedOperationException if a flavor is configured and is not in {@code available}
@@ -74,8 +73,7 @@ public abstract class GitHubResourceApi extends HttpResourceApi {
     /**
      * Rejects the call before any request when the client is a GitHub Enterprise Server client of a release outside
      * {@code since} to {@code until}, see {@link GitHubClientConfiguration#ghesVersion()}. Methods annotated with
-     * {@link io.github.piotr_janczukowicz.github.api.GhesVersions} call it right after
-     * {@link #requireFlavor(GitHubFlavor...)}.
+     * {@code @GhesVersions} call it right after {@link #requireFlavor(GitHubFlavor...)}.
      *
      * @param since first release that carries the operation, or empty for the oldest supported release
      * @param until last release that carries the operation, or empty for the newest supported release
