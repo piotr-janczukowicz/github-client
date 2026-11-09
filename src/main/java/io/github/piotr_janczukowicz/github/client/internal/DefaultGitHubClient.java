@@ -301,14 +301,13 @@ public final class DefaultGitHubClient extends HttpClient implements GitHubClien
         }
 
         /**
-         * Builds the client.
+         * Builds the client. A failed build, whether a setting is refused or the client cannot be constructed, closes
+         * the transport first, so a failed build of a root client leaves nothing open for the caller to release.
          *
          * @return client
          * @throws NullPointerException if {@link #userAgent(String)} was not called
          * @throws IllegalStateException if the base URI is plain {@code http} on a non-loopback host and
          *     {@link #allowInsecureHttp(boolean)} was not set
-         * @apiNote A failed build, whether a setting is refused or the client cannot be constructed, closes the
-         *     transport first, so a failed build of a root client leaves nothing open for the caller to release.
          */
         public DefaultGitHubClient build() {
             try {

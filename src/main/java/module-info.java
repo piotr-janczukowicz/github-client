@@ -1,3 +1,5 @@
+// The module that gets the internal package is not on this module's path.
+@SuppressWarnings("module")
 module io.github.piotr_janczukowicz.githubclient {
     requires transitive okhttp3;
     requires okio;
