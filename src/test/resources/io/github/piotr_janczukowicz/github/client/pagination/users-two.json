@@ -1,0 +1,22 @@
+[
+  {
+    "login": "two",
+    "id": 2,
+    "node_id": "n2",
+    "avatar_url": "https://example.com/a",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/two",
+    "html_url": "https://github.com/two",
+    "followers_url": "https://api.github.com/users/two/followers",
+    "following_url": "https://api.github.com/users/two/following{/other_user}",
+    "gists_url": "https://api.github.com/users/two/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/two/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/two/subscriptions",
+    "organizations_url": "https://api.github.com/users/two/orgs",
+    "repos_url": "https://api.github.com/users/two/repos",
+    "events_url": "https://api.github.com/users/two/events{/privacy}",
+    "received_events_url": "https://api.github.com/users/two/received_events",
+    "type": "User",
+    "site_admin": false
+  }
+]

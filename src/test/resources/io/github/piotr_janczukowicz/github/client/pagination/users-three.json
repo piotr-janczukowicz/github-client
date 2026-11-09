@@ -1,0 +1,22 @@
+[
+  {
+    "login": "three",
+    "id": 3,
+    "node_id": "n",
+    "avatar_url": "https://example.com/a",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/three",
+    "html_url": "https://github.com/three",
+    "followers_url": "https://api.github.com/users/three/followers",
+    "following_url": "https://api.github.com/users/three/following{/other_user}",
+    "gists_url": "https://api.github.com/users/three/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/three/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/three/subscriptions",
+    "organizations_url": "https://api.github.com/users/three/orgs",
+    "repos_url": "https://api.github.com/users/three/repos",
+    "events_url": "https://api.github.com/users/three/events{/privacy}",
+    "received_events_url": "https://api.github.com/users/three/received_events",
+    "type": "User",
+    "site_admin": false
+  }
+]
