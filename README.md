@@ -77,6 +77,17 @@ A GitHub App installation token is fetched, cached and renewed by `GitHubInstall
 settings (base URI, timeouts, retries) and adds the pagination limits (`perPage` and `maxPages`) and, for GitHub
 Enterprise Server, the flavor and release. Without a configuration the client talks to `https://api.github.com/`.
 
+## User guide
+
+The [user guide](docs/guide/README.md) has a chapter for each topic below.
+
+| Topic | In short |
+|---|---|
+| [Configuration](docs/guide/configuration.md) | Every option, its default and its limits on github.com, Enterprise Cloud and Enterprise Server |
+| [Authentication in depth](docs/guide/authentication.md) | Rotating tokens, App installations and token renewal, authenticating as the app, SAML single sign-on, security notes |
+| [Rate limiting](docs/guide/rate-limiting.md) | Waited out for you; a wait over `maxRateLimitWait` throws `GitHubRateLimitException` with `retryAt()` |
+| [Exception handling](docs/guide/exception-handling.md) | HTTP errors are unchecked `GitHubApiException` subclasses; what the client handles and what you should |
+
 ## Disclaimer
 
 This library is the transport of the other libraries in this family, and it is mainly tested against mock servers. Only
