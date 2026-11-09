@@ -1,7 +1,6 @@
 package io.github.piotr_janczukowicz.github;
 
-import static io.github.piotr_janczukowicz.util.ValidationUtils.requireNonNull;
-
+import io.github.piotr_janczukowicz.util.ListUtils;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
@@ -16,7 +15,7 @@ public record GitHubErrorBody(
         @Nullable String message, @Nullable String documentationUrl, List<GitHubErrorBody.Item> errors) {
 
     public GitHubErrorBody {
-        errors = List.copyOf(requireNonNull(errors, "errors"));
+        errors = ListUtils.copyOf(errors, "errors");
     }
 
     /**

@@ -18,6 +18,7 @@ import io.github.piotr_janczukowicz.http.HttpErrorBodies;
 import io.github.piotr_janczukowicz.http.HttpMethod;
 import io.github.piotr_janczukowicz.http.HttpResponse;
 import io.github.piotr_janczukowicz.json.JsonCodec;
+import io.github.piotr_janczukowicz.util.ListUtils;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.time.Clock;
@@ -147,7 +148,7 @@ public final class GitHubErrors {
 
         ParsedError {
             requireNonNull(message, "message");
-            errors = List.copyOf(requireNonNull(errors, "errors"));
+            errors = ListUtils.copyOf(errors, "errors");
         }
     }
 

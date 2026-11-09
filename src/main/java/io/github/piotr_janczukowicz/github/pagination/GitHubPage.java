@@ -4,6 +4,7 @@ import static io.github.piotr_janczukowicz.util.ValidationUtils.requireAtLeast;
 import static io.github.piotr_janczukowicz.util.ValidationUtils.requireNonNull;
 
 import io.github.piotr_janczukowicz.pagination.PaginationConfiguration;
+import io.github.piotr_janczukowicz.util.ListUtils;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -101,7 +102,7 @@ public final class GitHubPage<T> {
 
     private GitHubPage(
             final List<T> items, final GitHubPageWalk<T> session, final int pageCount, final Details<T> details) {
-        this.items = List.copyOf(requireNonNull(items, "items"));
+        this.items = ListUtils.copyOf(items, "items");
         this.session = requireNonNull(session, "session");
         this.pageCount = requireAtLeast(pageCount, 1, "pageCount");
         this.details = details;

@@ -1,7 +1,6 @@
 package io.github.piotr_janczukowicz.github.pagination;
 
-import static io.github.piotr_janczukowicz.util.ValidationUtils.requireNonNull;
-
+import io.github.piotr_janczukowicz.util.ListUtils;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
@@ -23,10 +22,7 @@ public record GitHubSearchEnvelope<T>(
         @Nullable List<GitHubLexicalFallbackReason> lexicalFallbackReasons) {
 
     public GitHubSearchEnvelope {
-        requireNonNull(items, "items");
-        items = List.copyOf(items);
-        if (lexicalFallbackReasons != null) {
-            lexicalFallbackReasons = List.copyOf(lexicalFallbackReasons);
-        }
+        items = ListUtils.copyOf(items, "items");
+        lexicalFallbackReasons = ListUtils.copyOrNull(lexicalFallbackReasons);
     }
 }

@@ -4,6 +4,7 @@ import static io.github.piotr_janczukowicz.util.ValidationUtils.requireNonNull;
 import static io.github.piotr_janczukowicz.util.ValidationUtils.requireNotBlank;
 import static io.github.piotr_janczukowicz.util.ValidationUtils.requirePositive;
 
+import io.github.piotr_janczukowicz.util.ListUtils;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -24,8 +25,8 @@ record GitHubInstallationScope(List<String> repositories, List<Long> repositoryI
     static final GitHubInstallationScope ALL = new GitHubInstallationScope(List.of(), List.of(), Map.of());
 
     GitHubInstallationScope {
-        repositories = List.copyOf(requireNonNull(repositories, "repositories"));
-        repositoryIds = List.copyOf(requireNonNull(repositoryIds, "repositoryIds"));
+        repositories = ListUtils.copyOf(repositories, "repositories");
+        repositoryIds = ListUtils.copyOf(repositoryIds, "repositoryIds");
         permissions = Map.copyOf(requireNonNull(permissions, "permissions"));
     }
 

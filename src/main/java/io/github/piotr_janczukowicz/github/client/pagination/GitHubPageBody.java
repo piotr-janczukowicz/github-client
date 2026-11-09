@@ -3,6 +3,7 @@ package io.github.piotr_janczukowicz.github.client.pagination;
 import static io.github.piotr_janczukowicz.util.ValidationUtils.requireNonNull;
 
 import io.github.piotr_janczukowicz.github.pagination.GitHubTaskCounts;
+import io.github.piotr_janczukowicz.util.ListUtils;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
@@ -20,7 +21,7 @@ public record GitHubPageBody<T>(
         @Nullable GitHubTaskCounts taskCounts) {
 
     public GitHubPageBody {
-        items = List.copyOf(requireNonNull(items, "items"));
+        items = ListUtils.copyOf(items, "items");
     }
 
     /**
