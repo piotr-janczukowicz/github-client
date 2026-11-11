@@ -4,6 +4,7 @@ import static io.github.piotr_janczukowicz.util.ValidationUtils.requireNonNull;
 
 import io.github.piotr_janczukowicz.github.client.internal.ClientStacks;
 import io.github.piotr_janczukowicz.github.client.internal.DefaultGitHubClient;
+import io.github.piotr_janczukowicz.http.HttpUserAgents;
 import io.github.piotr_janczukowicz.http.client.HttpClientConfiguration;
 import io.github.piotr_janczukowicz.http.client.authentication.AuthenticationProvider;
 import io.github.piotr_janczukowicz.http.transport.ConditionalCachingHttpTransport;
@@ -111,7 +112,7 @@ public final class GitHubClients {
     public static GitHubClient create(
             final AuthenticationProvider auth, final String userAgent, final GitHubClientConfiguration configuration) {
         requireNonNull(auth, "auth");
-        DefaultGitHubClient.requireValidUserAgent(userAgent);
+        HttpUserAgents.requireValid(userAgent);
         requireNonNull(configuration, CONFIGURATION_PARAMETER);
         final HttpTransport okHttp = HttpTransports.okHttp(configuration.transport());
         return ClientStacks.assemble(
@@ -145,7 +146,7 @@ public final class GitHubClients {
     public static GitHubClient createTokenClient(
             final AuthenticationProvider auth, final String userAgent, final GitHubClientConfiguration configuration) {
         requireNonNull(auth, "auth");
-        DefaultGitHubClient.requireValidUserAgent(userAgent);
+        HttpUserAgents.requireValid(userAgent);
         requireNonNull(configuration, CONFIGURATION_PARAMETER);
         final HttpTransport base = HttpTransports.okHttp(configuration.transport());
         try {

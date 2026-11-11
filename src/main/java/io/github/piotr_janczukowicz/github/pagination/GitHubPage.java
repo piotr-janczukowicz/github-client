@@ -3,6 +3,8 @@ package io.github.piotr_janczukowicz.github.pagination;
 import static io.github.piotr_janczukowicz.util.ValidationUtils.requireAtLeast;
 import static io.github.piotr_janczukowicz.util.ValidationUtils.requireNonNull;
 
+import io.github.piotr_janczukowicz.pagination.Page;
+import io.github.piotr_janczukowicz.pagination.Pages;
 import io.github.piotr_janczukowicz.pagination.PaginationConfiguration;
 import io.github.piotr_janczukowicz.util.ListUtils;
 import java.io.IOException;
@@ -34,7 +36,7 @@ import org.jspecify.annotations.Nullable;
  * <p>Not thread-safe: a page and the walk it shares hold unsynchronized mutable state, so all pages of one walk, and
  * the streams made from them, must stay confined to a single thread or be guarded by the caller.
  */
-public final class GitHubPage<T> {
+public final class GitHubPage<T> implements Page<T, GitHubPage<T>> {
 
     /** Inclusive maximum number of search results GitHub returns for one query. */
     public static final int SEARCH_RESULT_LIMIT = 1000;
@@ -113,6 +115,7 @@ public final class GitHubPage<T> {
      *
      * @return unmodifiable list of items for this page
      */
+    @Override
     public List<T> items() {
         return items;
     }
@@ -194,6 +197,7 @@ public final class GitHubPage<T> {
      * @throws GitHubPaginationLimitExceededException if a configured {@code maxPages} was reached with more pages
      *     available
      */
+    @Override
     public Optional<GitHubPage<T>> next() throws IOException {
         session.requireLatest(this);
         return session.loadNext(this);
@@ -223,7 +227,7 @@ public final class GitHubPage<T> {
      */
     public List<T> all() throws IOException {
         session.requireLatest(this);
-        return GitHubPageStreams.all(this);
+        return Pages.all(this);
     }
 
     /**
@@ -242,7 +246,7 @@ public final class GitHubPage<T> {
      */
     public Stream<T> stream() {
         session.requireLatest(this);
-        return GitHubPageStreams.items(this);
+        return Pages.items(this);
     }
 
     /**
@@ -254,7 +258,7 @@ public final class GitHubPage<T> {
      */
     public Stream<GitHubPage<T>> pages() {
         session.requireLatest(this);
-        return GitHubPageStreams.pages(this);
+        return Pages.pages(this);
     }
 
     /**
@@ -273,7 +277,7 @@ public final class GitHubPage<T> {
     public void forEachPage(final Consumer<GitHubPage<T>> consumer) throws IOException {
         requireNonNull(consumer, "consumer");
         session.requireLatest(this);
-        GitHubPageStreams.forEachPage(this, consumer);
+        Pages.forEachPage(this, consumer);
     }
 
     /**

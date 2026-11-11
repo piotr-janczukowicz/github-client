@@ -1,19 +1,11 @@
 package io.github.piotr_janczukowicz.github.json;
 
-import io.github.piotr_janczukowicz.json.jackson.module.immutable.ImmutableCollectionsModule;
+import io.github.piotr_janczukowicz.json.jackson.JsonMappers;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
-import tools.jackson.core.StreamReadFeature;
-import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.JacksonModule;
-import tools.jackson.databind.PropertyNamingStrategies;
-import tools.jackson.databind.cfg.CoercionAction;
-import tools.jackson.databind.cfg.CoercionInputShape;
-import tools.jackson.databind.cfg.DateTimeFeature;
-import tools.jackson.databind.cfg.EnumFeature;
 import tools.jackson.databind.json.JsonMapper;
-import tools.jackson.databind.type.LogicalType;
 
 /**
  * Configured Jackson {@link JsonMapper} for GitHub JSON.
@@ -55,23 +47,7 @@ import tools.jackson.databind.type.LogicalType;
  */
 final class GitHubJsonMappers {
 
-    private static final JsonMapper DEFAULTS = JsonMapper.builder()
-            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-            .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
-            .disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT)
-            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
-            .enable(EnumFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL)
-            .disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
-            .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
-            .withCoercionConfig(LogicalType.Textual, cfg -> {
-                cfg.setCoercion(CoercionInputShape.Integer, CoercionAction.TryConvert);
-                cfg.setCoercion(CoercionInputShape.Float, CoercionAction.TryConvert);
-                cfg.setCoercion(CoercionInputShape.Boolean, CoercionAction.TryConvert);
-            })
-            .withCoercionConfig(
-                    LogicalType.Collection,
-                    cfg -> cfg.setCoercion(CoercionInputShape.String, CoercionAction.TryConvert))
-            .addModule(new ImmutableCollectionsModule())
+    private static final JsonMapper DEFAULTS = JsonMappers.snakeCase()
             .addModule(GitHubCoreModule.create())
             .addModules(serviceModules())
             .build();
