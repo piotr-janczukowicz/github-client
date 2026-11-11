@@ -10,7 +10,7 @@
   </parent>
 
   <artifactId>github-client</artifactId>
-  <version>3-SNAPSHOT</version>
+  <version>4-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>github-client</name>
