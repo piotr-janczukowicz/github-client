@@ -22,7 +22,9 @@ import io.github.piotr_janczukowicz.http.client.HttpCall;
 import io.github.piotr_janczukowicz.http.client.HttpClientExecutor;
 import io.github.piotr_janczukowicz.http.client.HttpOriginViolationException;
 import io.github.piotr_janczukowicz.http.uri.HttpUris;
+import io.github.piotr_janczukowicz.pagination.LinkHeader;
 import io.github.piotr_janczukowicz.pagination.PaginationConfiguration;
+import io.github.piotr_janczukowicz.pagination.PaginationException;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
@@ -403,11 +405,19 @@ public final class GitHubPagers {
                 logEnd("there is no Link header");
                 return Optional.empty();
             }
-            final Optional<URI> next = GitHubLinkHeader.parse(linkHeader).next().map(this::absoluteLink);
+            final Optional<URI> next = parseNext(linkHeader).map(this::absoluteLink);
             if (next.isEmpty()) {
                 logEnd("the Link header has no rel=\"next\"");
             }
             return next;
+        }
+
+        private static Optional<URI> parseNext(final String header) {
+            try {
+                return LinkHeader.parse(header).next();
+            } catch (final PaginationException ex) {
+                throw new GitHubPaginationException(ex.getMessage(), ex);
+            }
         }
 
         private void logEnd(final String reason) {

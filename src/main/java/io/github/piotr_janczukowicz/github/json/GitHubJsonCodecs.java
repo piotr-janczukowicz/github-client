@@ -1,6 +1,7 @@
 package io.github.piotr_janczukowicz.github.json;
 
 import io.github.piotr_janczukowicz.json.JsonCodec;
+import io.github.piotr_janczukowicz.json.jackson.JacksonJsonCodec;
 
 /**
  * Factory for the {@link JsonCodec} that reads and writes GitHub's JSON.
@@ -11,7 +12,7 @@ import io.github.piotr_janczukowicz.json.JsonCodec;
  */
 public final class GitHubJsonCodecs {
 
-    private static final JsonCodec DEFAULTS = new GitHubJacksonCodec(GitHubJsonMappers.defaults());
+    private static final JsonCodec DEFAULTS = new JacksonJsonCodec(GitHubJsonMappers.defaults());
 
     private GitHubJsonCodecs() {
         throw new UnsupportedOperationException("Utility class");

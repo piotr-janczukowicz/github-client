@@ -3,7 +3,6 @@ package io.github.piotr_janczukowicz.github.client.internal;
 import static io.github.piotr_janczukowicz.http.HttpHeaderNames.ACCEPT;
 import static io.github.piotr_janczukowicz.http.HttpHeaderNames.USER_AGENT;
 import static io.github.piotr_janczukowicz.util.ValidationUtils.requireNonNull;
-import static io.github.piotr_janczukowicz.util.ValidationUtils.requireNotBlank;
 
 import io.github.piotr_janczukowicz.github.GitHubHeaders;
 import io.github.piotr_janczukowicz.github.client.GhesVersion;
@@ -15,6 +14,7 @@ import io.github.piotr_janczukowicz.github.client.GitHubSsoHeaders;
 import io.github.piotr_janczukowicz.github.client.ratelimit.GitHubRateLimitListener;
 import io.github.piotr_janczukowicz.github.client.ratelimit.GitHubRateLimitSnapshot;
 import io.github.piotr_janczukowicz.http.HttpHeaders;
+import io.github.piotr_janczukowicz.http.HttpUserAgents;
 import io.github.piotr_janczukowicz.http.client.HttpCallObserver;
 import io.github.piotr_janczukowicz.http.client.HttpClient;
 import io.github.piotr_janczukowicz.http.client.HttpClientConfiguration;
@@ -25,15 +25,11 @@ import io.github.piotr_janczukowicz.http.client.authentication.AuthenticationPro
 import io.github.piotr_janczukowicz.http.transport.HttpTransport;
 import io.github.piotr_janczukowicz.http.uri.HttpUris;
 import io.github.piotr_janczukowicz.pagination.PaginationConfiguration;
-import java.net.InetAddress;
 import java.net.URI;
-import java.net.UnknownHostException;
 import java.time.Clock;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,8 +40,6 @@ public final class DefaultGitHubClient extends HttpClient implements GitHubClien
     private static final Logger LOG = LoggerFactory.getLogger(DefaultGitHubClient.class);
 
     private static final String USER_AGENT_PARAMETER = "userAgent";
-
-    private static final Pattern IPV4_LOOPBACK = Pattern.compile("127(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}");
 
     private final PaginationConfiguration pagination;
     private final GitHubRateLimitTracker rateLimits;
@@ -117,25 +111,6 @@ public final class DefaultGitHubClient extends HttpClient implements GitHubClien
     }
 
     /**
-     * Checks a {@code User-Agent} value: not blank, visible ASCII only (letters, digits, punctuation and spaces).
-     *
-     * @param userAgent value to check
-     * @return {@code userAgent}
-     * @throws NullPointerException if {@code userAgent} is {@code null}
-     * @throws IllegalArgumentException if {@code userAgent} is blank or has other characters
-     */
-    public static String requireValidUserAgent(final String userAgent) {
-        requireNotBlank(userAgent, USER_AGENT_PARAMETER);
-        for (int i = 0; i < userAgent.length(); i++) {
-            final char c = userAgent.charAt(i);
-            if (c < ' ' || c > '~') {
-                throw new IllegalArgumentException("userAgent must contain visible ASCII characters only");
-            }
-        }
-        return userAgent;
-    }
-
-    /**
      * Builder over {@code transport}, which the client owns and closes. Only {@link GitHubClients} and the test helpers
      * build clients this way. The caller composes the transport: {@link GitHubClients} stacks the cache, retry, pacing
      * and limits on it as decorators. A transport without a retry layer that knows GitHub's rate limits (GitHub signals
@@ -156,24 +131,6 @@ public final class DefaultGitHubClient extends HttpClient implements GitHubClien
             final HttpClientConfiguration configuration,
             final AuthenticationProvider auth) {
         return new Builder(transport, configuration, auth);
-    }
-
-    static boolean isLoopbackHost(final @Nullable String host) {
-        final String name = host == null ? "" : host;
-        // An IP literal is parsed, never resolved, so a host name cannot pass as one.
-        return "localhost".equalsIgnoreCase(name)
-                || name.toLowerCase(Locale.ROOT).endsWith(".localhost")
-                || IPV4_LOOPBACK.matcher(name).matches()
-                || (name.startsWith("[") && name.endsWith("]") && isLoopbackIpv6(name));
-    }
-
-    private static boolean isLoopbackIpv6(final String literal) {
-        try {
-            return InetAddress.getByName(literal).isLoopbackAddress();
-        } catch (final UnknownHostException unused) {
-            // Not an IPv6 literal.
-            return false;
-        }
     }
 
     /** Client factory with a fixed transport, configuration and codec and an optional rate-limit listener. */
@@ -220,7 +177,7 @@ public final class DefaultGitHubClient extends HttpClient implements GitHubClien
          * @throws IllegalArgumentException if {@code userAgent} is blank or has characters other than visible ASCII
          */
         public Builder userAgent(final String userAgent) {
-            this.userAgent = requireValidUserAgent(userAgent);
+            this.userAgent = HttpUserAgents.requireValid(userAgent);
             return this;
         }
 
@@ -412,7 +369,7 @@ public final class DefaultGitHubClient extends HttpClient implements GitHubClien
         }
 
         private void requireSecureOrAllowed(final URI baseUri) {
-            if (!"http".equalsIgnoreCase(baseUri.getScheme()) || isLoopbackHost(baseUri.getHost())) {
+            if (!"http".equalsIgnoreCase(baseUri.getScheme()) || HttpUris.isLoopbackHost(baseUri.getHost())) {
                 return;
             }
             if (!isInsecureHttpAllowed) {
