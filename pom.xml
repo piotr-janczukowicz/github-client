@@ -18,7 +18,7 @@
   <url>https://github.com/piotr-janczukowicz/github-client</url>
 
   <properties>
-    <common-core.version>5-SNAPSHOT</common-core.version>
+    <common-core.version>5</common-core.version>
     <junit.parallel.enabled>true</junit.parallel.enabled>
     <test.module.args>--add-modules jdk.httpserver --add-reads io.github.piotr_janczukowicz.githubclient=jdk.httpserver --add-opens io.github.piotr_janczukowicz.githubclient/io.github.piotr_janczukowicz.test.support=common.core --add-opens io.github.piotr_janczukowicz.githubclient/io.github.piotr_janczukowicz.test=ALL-UNNAMED --add-opens io.github.piotr_janczukowicz.githubclient/io.github.piotr_janczukowicz.test.model=tools.jackson.databind,ALL-UNNAMED</test.module.args>
   </properties>
