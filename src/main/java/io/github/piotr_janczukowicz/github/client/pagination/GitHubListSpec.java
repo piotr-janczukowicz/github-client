@@ -10,6 +10,8 @@ import io.github.piotr_janczukowicz.github.pagination.GitHubTaskCounts;
 import io.github.piotr_janczukowicz.http.HttpResponse;
 import io.github.piotr_janczukowicz.json.JsonType;
 import io.github.piotr_janczukowicz.pagination.PaginationConfiguration;
+import io.github.piotr_janczukowicz.util.ListUtils;
+import io.github.piotr_janczukowicz.util.SetUtils;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
@@ -30,7 +32,7 @@ public record GitHubListSpec<T>(
         Set<GitHubPageRequestKind> allowedKinds, Decoder<T> decoder, boolean sendPerPage, int maxPerPage) {
 
     public GitHubListSpec {
-        allowedKinds = Set.copyOf(requireNonNull(allowedKinds, "allowedKinds"));
+        allowedKinds = SetUtils.copyOf(allowedKinds, "allowedKinds");
         requireNonNull(decoder, "decoder");
         requireBetween(maxPerPage, 1, PaginationConfiguration.MAX_PER_PAGE, "maxPerPage");
     }
@@ -125,7 +127,7 @@ public record GitHubListSpec<T>(
                 .decoder(json -> response -> {
                     final W wrapper = json.decode(response, wrapperType);
                     final List<T> listed = items.apply(wrapper);
-                    final List<T> decoded = listed == null ? List.of() : listed;
+                    final List<T> decoded = ListUtils.orEmpty(listed);
                     if (totalCount == null) {
                         return GitHubPageBody.of(decoded);
                     }
@@ -186,7 +188,7 @@ public record GitHubListSpec<T>(
                 .decoder(json -> response -> {
                     final W wrapper = json.decode(response, wrapperType);
                     final List<T> listed = items.apply(wrapper);
-                    return GitHubPageBody.of(listed == null ? List.of() : listed, taskCounts.apply(wrapper));
+                    return GitHubPageBody.of(ListUtils.orEmpty(listed), taskCounts.apply(wrapper));
                 })
                 .maxPerPage(PaginationConfiguration.MAX_PER_PAGE)
                 .build();
@@ -301,7 +303,7 @@ public record GitHubListSpec<T>(
          * @throws NullPointerException if {@code allowedKinds} is {@code null}
          */
         public Builder<T> allowedKinds(final Set<GitHubPageRequestKind> allowedKinds) {
-            this.allowedKinds = Set.copyOf(requireNonNull(allowedKinds, "allowedKinds"));
+            this.allowedKinds = SetUtils.copyOf(allowedKinds, "allowedKinds");
             return this;
         }
 

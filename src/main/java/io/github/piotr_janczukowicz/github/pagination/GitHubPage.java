@@ -371,7 +371,7 @@ public final class GitHubPage<T> implements Page<T, GitHubPage<T>> {
         @Override
         public List<GitHubLexicalFallbackReason> lexicalFallbackReasons() {
             final List<GitHubLexicalFallbackReason> reasons = envelope.lexicalFallbackReasons();
-            return reasons == null ? List.of() : reasons;
+            return ListUtils.orEmpty(reasons);
         }
     }
 }

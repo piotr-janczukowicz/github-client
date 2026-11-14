@@ -1,6 +1,7 @@
 package io.github.piotr_janczukowicz.github.json;
 
 import io.github.piotr_janczukowicz.github.GitHubErrorBody;
+import io.github.piotr_janczukowicz.json.jackson.JsonNodes;
 import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
@@ -24,7 +25,9 @@ final class GitHubErrorBodyDeserializer extends StdDeserializer<GitHubErrorBody>
             throw DatabindException.from(parser, "GitHub error body must be a JSON object");
         }
         return new GitHubErrorBody(
-                text(tree, "message"), text(tree, "documentation_url"), parseErrors(tree.get("errors")));
+                JsonNodes.textOrNull(tree, "message"),
+                JsonNodes.textOrNull(tree, "documentation_url"),
+                parseErrors(tree.get("errors")));
     }
 
     private static List<GitHubErrorBody.Item> parseErrors(final @Nullable JsonNode errors) {
@@ -37,17 +40,12 @@ final class GitHubErrorBodyDeserializer extends StdDeserializer<GitHubErrorBody>
                 items.add(new GitHubErrorBody.Item(null, null, null, item.asString()));
             } else if (item.isObject()) {
                 items.add(new GitHubErrorBody.Item(
-                        text(item, "resource"), text(item, "field"), text(item, "code"), text(item, "message")));
+                        JsonNodes.textOrNull(item, "resource"),
+                        JsonNodes.textOrNull(item, "field"),
+                        JsonNodes.textOrNull(item, "code"),
+                        JsonNodes.textOrNull(item, "message")));
             }
         }
         return List.copyOf(items);
-    }
-
-    private static @Nullable String text(final JsonNode node, final String field) {
-        final JsonNode value = node.get(field);
-        if (value == null || !value.isString()) {
-            return null;
-        }
-        return value.asString();
     }
 }
