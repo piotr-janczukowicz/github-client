@@ -14,5 +14,5 @@ jobs:
     permissions:
       contents: read
       security-events: write
-    uses: piotr-janczukowicz/common-parent/.github/workflows/reusable-codeql.yml@c9f1a5381f07b58dbcefe999d7edb8a9e936fe2b # v16
+    uses: piotr-janczukowicz/common-parent/.github/workflows/reusable-codeql.yml@736dd7d218d81bcc26e0489f8853b711ad95f26d # v17
     secrets: inherit

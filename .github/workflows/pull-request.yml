@@ -14,5 +14,5 @@ concurrency:
 
 jobs:
   verify:
-    uses: piotr-janczukowicz/common-parent/.github/workflows/reusable-pull-request.yml@c9f1a5381f07b58dbcefe999d7edb8a9e936fe2b # v16
+    uses: piotr-janczukowicz/common-parent/.github/workflows/reusable-pull-request.yml@736dd7d218d81bcc26e0489f8853b711ad95f26d # v17
     secrets: inherit
