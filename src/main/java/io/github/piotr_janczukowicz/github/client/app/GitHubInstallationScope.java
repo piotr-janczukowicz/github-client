@@ -5,6 +5,7 @@ import static io.github.piotr_janczukowicz.util.ValidationUtils.requireNotBlank;
 import static io.github.piotr_janczukowicz.util.ValidationUtils.requirePositive;
 
 import io.github.piotr_janczukowicz.util.ListUtils;
+import io.github.piotr_janczukowicz.util.MapUtils;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -27,7 +28,7 @@ record GitHubInstallationScope(List<String> repositories, List<Long> repositoryI
     GitHubInstallationScope {
         repositories = ListUtils.copyOf(repositories, "repositories");
         repositoryIds = ListUtils.copyOf(repositoryIds, "repositoryIds");
-        permissions = Map.copyOf(requireNonNull(permissions, "permissions"));
+        permissions = MapUtils.copyOf(permissions, "permissions");
     }
 
     GitHubInstallationScope withRepositories(final Collection<String> repositoryNames) {
@@ -59,7 +60,8 @@ record GitHubInstallationScope(List<String> repositories, List<Long> repositoryI
             requireNotBlank(name, "permission name");
             requireNotBlank(level, "permission level");
         });
-        return new GitHubInstallationScope(repositories, repositoryIds, Map.copyOf(permissionLevels));
+        return new GitHubInstallationScope(
+                repositories, repositoryIds, MapUtils.copyOf(permissionLevels, "permissionLevels"));
     }
 
     Map<String, Object> toRequestBody() {

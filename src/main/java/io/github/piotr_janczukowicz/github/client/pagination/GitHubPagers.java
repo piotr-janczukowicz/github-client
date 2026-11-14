@@ -28,7 +28,6 @@ import io.github.piotr_janczukowicz.pagination.PaginationException;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -254,7 +253,7 @@ public final class GitHubPagers {
             this.http = executor;
             this.overlayHeaders = target.overlayHeaders();
             this.path = target.path();
-            this.baseQuery = Collections.unmodifiableMap(HttpUris.copyQueryValues(target.query()));
+            this.baseQuery = HttpUris.unmodifiableQueryValues(target.query());
             this.isPerPageSent = paging.isPerPageSent();
             if (!isPerPageSent) {
                 GitHubPageRequestKindValidators.requireNoExplicitPerPage(request, noPerPageAllowed(request));
