@@ -371,11 +371,7 @@ public final class GitHubPagers {
         }
 
         private static Optional<URI> parseNext(final String header) {
-            try {
-                return LinkHeader.parse(header).next();
-            } catch (final PaginationException ex) {
-                throw new PaginationException(ex.getMessage(), ex);
-            }
+            return LinkHeader.parse(header).next();
         }
 
         private void logEnd(final String reason) {

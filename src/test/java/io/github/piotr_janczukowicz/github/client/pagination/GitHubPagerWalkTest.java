@@ -2340,7 +2340,7 @@ class GitHubPagerWalkTest {
     }
 
     @Test
-    void loadNext_shouldNotHint_whenTheLinkIsOpaque() throws Exception {
+    void loadNext_shouldFailWithoutHint_whenTheLinkIsOpaque() throws Exception {
         when(transport.execute(any()))
                 .thenReturn(jsonResponseWithLink("users-one-two.json", "<urn:example:next>; rel=\"next\""));
 
@@ -2352,12 +2352,12 @@ class GitHubPagerWalkTest {
 
         assertThat(thrown)
                 .isInstanceOf(PaginationException.class)
-                .hasMessageContaining("outside the API base URI")
+                .hasMessageContaining("is not an http(s) URL")
                 .hasMessageNotContaining("configured hostname");
     }
 
     @Test
-    void loadNext_shouldNotHint_whenTheLinkHostIsNotAValidHostName() throws Exception {
+    void loadNext_shouldFailWithoutHint_whenTheLinkHostIsNotAValidHostName() throws Exception {
         when(transport.execute(any()))
                 .thenReturn(jsonResponseWithLink("users-one-two.json", "<https://my_host/repos?page=2>; rel=\"next\""));
 
@@ -2369,7 +2369,7 @@ class GitHubPagerWalkTest {
 
         assertThat(thrown)
                 .isInstanceOf(PaginationException.class)
-                .hasMessageContaining("outside the API base URI")
+                .hasMessageContaining("is not an http(s) URL")
                 .hasMessageNotContaining("configured hostname");
     }
 

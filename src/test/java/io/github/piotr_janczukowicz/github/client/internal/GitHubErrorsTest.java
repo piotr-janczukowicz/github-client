@@ -77,6 +77,40 @@ class GitHubErrorsTest {
         });
     }
 
+    @Test
+    void parse_shouldReplaceControlCharactersInTheDocumentationUrl_whenTheBodyHoldsThem() {
+        final String json = "{\"message\":\"Bad\",\"documentation_url\":\"https://docs.example.test/\\nforged\"}";
+
+        final GitHubErrors.ParsedError parsed =
+                GitHubErrors.parse(json.getBytes(StandardCharsets.UTF_8), 422, StandardCharsets.UTF_8);
+
+        assertThat(parsed.documentationUrl()).isEqualTo("https://docs.example.test/ forged");
+    }
+
+    @Test
+    void parse_shouldReplaceLineSeparatorsAndBidirectionalMarks_whenTheBodyHoldsThem() {
+        final String json = "{\"message\":\"a\u2028b\u202ec\u200bd\ufeffe\","
+                + "\"documentation_url\":\"https://docs.example.test/\u2029x\"}";
+
+        final GitHubErrors.ParsedError parsed =
+                GitHubErrors.parse(json.getBytes(StandardCharsets.UTF_8), 422, StandardCharsets.UTF_8);
+
+        assertSoftly(softly -> {
+            softly.assertThat(parsed.message()).isEqualTo("a b c d e");
+            softly.assertThat(parsed.documentationUrl()).isEqualTo("https://docs.example.test/ x");
+        });
+    }
+
+    @Test
+    void parse_shouldUseTheStatusMessage_whenTheMessageHoldsOnlyControlCharacters() {
+        final String json = "{\"message\":\"\\u0001\\u0002\"}";
+
+        final GitHubErrors.ParsedError parsed =
+                GitHubErrors.parse(json.getBytes(StandardCharsets.UTF_8), 422, StandardCharsets.UTF_8);
+
+        assertThat(parsed.message()).isEqualTo("GitHub API request failed with HTTP 422");
+    }
+
     @ParameterizedTest
     @ValueSource(ints = {301, 302, 307})
     void toException_shouldDropLocationHeader_whenRedirectStatus(final int status) {
