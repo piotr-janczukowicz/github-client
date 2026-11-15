@@ -19,7 +19,7 @@ This page is part of the [user guide](README.md). The [README](../../README.md) 
 | `JsonDecodeException` | the response body could not be read as the expected model | unchecked |
 | `JsonEncodeException` | a payload you passed could not be written as JSON | unchecked |
 | `HttpEmptyResponseException` | a successful response without a body where a value was expected (202, 204) | unchecked |
-| `GitHubPaginationException` | the next page cannot be followed, a page repeats, or `maxPages` is reached (`GitHubPaginationLimitExceededException`) | unchecked |
+| `PaginationException` (common-core) | the next page cannot be followed, a page repeats (`PaginationLoopException`), or `maxPages` is reached (`PaginationLimitExceededException`) | unchecked |
 | `GitHubInstallationTokenUnavailableException` | an installation token fetch failed earlier and the provider is in its backoff; `retryAt()` | unchecked |
 | `HttpOriginViolationException` | a request target leaves the API origin, such as an absolute URL on another host; it is an `IllegalArgumentException` | unchecked |
 | `IllegalArgumentException`, `NullPointerException` | an argument is blank, null or outside its limits | unchecked |

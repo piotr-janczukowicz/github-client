@@ -19,6 +19,7 @@ import io.github.piotr_janczukowicz.http.HttpMethod;
 import io.github.piotr_janczukowicz.http.HttpResponse;
 import io.github.piotr_janczukowicz.json.JsonCodec;
 import io.github.piotr_janczukowicz.util.ListUtils;
+import io.github.piotr_janczukowicz.util.StringUtils;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.time.Clock;
@@ -119,7 +120,7 @@ public final class GitHubErrors {
     // A JsonCodec never returns null (a JSON null fails with an IllegalStateException), so body is always a value.
     private static ParsedError fromBody(final GitHubErrorBody body, final int statusCode, final String rawBody) {
         final String jsonMessage = body.message();
-        final String message = isBlank(jsonMessage) ? fallbackMessage(statusCode) : jsonMessage;
+        final String message = isBlank(jsonMessage) ? fallbackMessage(statusCode) : scrubbed(jsonMessage);
         return new ParsedError(message, body.documentationUrl(), toValidationErrors(body.errors()), rawBody);
     }
 
@@ -128,7 +129,14 @@ public final class GitHubErrors {
     }
 
     private static GitHubValidationError toValidationError(final GitHubErrorBody.Item item) {
-        return new GitHubValidationError(item.resource(), item.field(), item.code(), item.message());
+        return new GitHubValidationError(
+                scrubbed(item.resource()), scrubbed(item.field()), scrubbed(item.code()), scrubbed(item.message()));
+    }
+
+    // Server text reaches logs through the exception message, so a control character that could forge a log line or
+    // an escape sequence becomes a space. The raw body keeps the text as it came.
+    private static @Nullable String scrubbed(final @Nullable String text) {
+        return text == null ? null : StringUtils.replaceControlCharacters(text, ' ');
     }
 
     private static String fallbackMessage(final int statusCode) {

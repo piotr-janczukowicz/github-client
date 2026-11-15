@@ -17,7 +17,6 @@ import io.github.piotr_janczukowicz.github.client.GitHubClient;
 import io.github.piotr_janczukowicz.github.client.TestGitHubClients;
 import io.github.piotr_janczukowicz.github.client.exception.GitHubApiException;
 import io.github.piotr_janczukowicz.github.client.exception.GitHubRateLimitException;
-import io.github.piotr_janczukowicz.github.json.GitHubJsonCodecs;
 import io.github.piotr_janczukowicz.github.pagination.GitHubCursorRequest;
 import io.github.piotr_janczukowicz.github.pagination.GitHubDeliveryCursorRequest;
 import io.github.piotr_janczukowicz.github.pagination.GitHubIssueSearchType;
@@ -27,9 +26,6 @@ import io.github.piotr_janczukowicz.github.pagination.GitHubPageNumberRequest;
 import io.github.piotr_janczukowicz.github.pagination.GitHubPageRequest;
 import io.github.piotr_janczukowicz.github.pagination.GitHubPageRequestKind;
 import io.github.piotr_janczukowicz.github.pagination.GitHubPageRequestKindValidators;
-import io.github.piotr_janczukowicz.github.pagination.GitHubPaginationException;
-import io.github.piotr_janczukowicz.github.pagination.GitHubPaginationLimitExceededException;
-import io.github.piotr_janczukowicz.github.pagination.GitHubPaginationLoopException;
 import io.github.piotr_janczukowicz.github.pagination.GitHubSearchEnvelope;
 import io.github.piotr_janczukowicz.github.pagination.GitHubSinceRequest;
 import io.github.piotr_janczukowicz.github.pagination.GitHubStartIndexRequest;
@@ -45,6 +41,9 @@ import io.github.piotr_janczukowicz.json.JsonCodec;
 import io.github.piotr_janczukowicz.json.JsonType;
 import io.github.piotr_janczukowicz.json.JsonTypes;
 import io.github.piotr_janczukowicz.pagination.PaginationConfiguration;
+import io.github.piotr_janczukowicz.pagination.PaginationException;
+import io.github.piotr_janczukowicz.pagination.PaginationLimitExceededException;
+import io.github.piotr_janczukowicz.pagination.PaginationLoopException;
 import io.github.piotr_janczukowicz.test.TestClients;
 import io.github.piotr_janczukowicz.test.TestHosts;
 import io.github.piotr_janczukowicz.test.http.HttpResponses;
@@ -82,7 +81,7 @@ import tools.jackson.databind.json.JsonMapper;
 class GitHubPagerWalkTest {
 
     private static final JsonType<List<TestUser>> USERS_TYPE = JsonTypes.listOf(TestUser.class);
-    private static final JsonCodec JSON_CODEC = GitHubJsonCodecs.defaults();
+    private static final JsonCodec JSON_CODEC = new UserCodec();
     private static final GitHubPageRequest FIRST_SINCE = GitHubSinceRequest.first(2);
     private static final JsonMapper JSON_MAPPER = JsonMapper.builder().build();
     private static final Map<String, List<String>> TOPICS_QUERY = Map.of("q", List.of("ruby"));
@@ -314,7 +313,7 @@ class GitHubPagerWalkTest {
             thrown = catchThrowable(second::next);
         }
 
-        assertThat(thrown).isInstanceOf(GitHubPaginationLoopException.class).hasMessageContaining("repeated");
+        assertThat(thrown).isInstanceOf(PaginationLoopException.class).hasMessageContaining("repeated");
         verify(transport, times(2)).execute(any());
     }
 
@@ -333,7 +332,7 @@ class GitHubPagerWalkTest {
         }
 
         assertThat(thrown)
-                .isInstanceOf(GitHubPaginationLoopException.class)
+                .isInstanceOf(PaginationLoopException.class)
                 .hasMessageContaining("repeated")
                 .hasMessageContaining("https://api.github.com/users")
                 .hasMessageNotContaining("since=2");
@@ -375,7 +374,7 @@ class GitHubPagerWalkTest {
         }
 
         assertThat(thrown)
-                .isInstanceOf(GitHubPaginationException.class)
+                .isInstanceOf(PaginationException.class)
                 .hasMessageContaining("https://api.github.com/users")
                 .hasMessageNotContaining("secret");
         verify(transport, times(1)).execute(any());
@@ -691,10 +690,10 @@ class GitHubPagerWalkTest {
         }
 
         assertThat(thrown)
-                .isInstanceOf(GitHubPaginationLimitExceededException.class)
+                .isInstanceOf(PaginationLimitExceededException.class)
                 .extracting(
-                        ex -> ((GitHubPaginationLimitExceededException) ex).maxPages(),
-                        ex -> ((GitHubPaginationLimitExceededException) ex).pageCount())
+                        ex -> ((PaginationLimitExceededException) ex).maxPages(),
+                        ex -> ((PaginationLimitExceededException) ex).pageCount())
                 .containsExactly(1, 1);
         verify(transport).execute(any());
     }
@@ -745,7 +744,7 @@ class GitHubPagerWalkTest {
 
         final Throwable thrown = catchThrowable(first::next);
 
-        assertThat(thrown).isInstanceOf(GitHubPaginationException.class).hasMessageContaining("API base URI");
+        assertThat(thrown).isInstanceOf(PaginationException.class).hasMessageContaining("API base URI");
     }
 
     @Test
@@ -1273,7 +1272,7 @@ class GitHubPagerWalkTest {
             thrown = catchThrowable(first::next);
         }
 
-        assertThat(thrown).isInstanceOf(GitHubPaginationException.class).hasMessageContaining("API base URI");
+        assertThat(thrown).isInstanceOf(PaginationException.class).hasMessageContaining("API base URI");
         verify(transport, times(1)).execute(any());
     }
 
@@ -1423,7 +1422,7 @@ class GitHubPagerWalkTest {
             thrown = catchThrowable(first::next);
         }
 
-        assertThat(thrown).isInstanceOf(GitHubPaginationException.class).hasMessageContaining("Link");
+        assertThat(thrown).isInstanceOf(PaginationException.class).hasMessageContaining("Link");
     }
 
     @ParameterizedTest
@@ -1439,9 +1438,7 @@ class GitHubPagerWalkTest {
             thrown = catchThrowable(first::next);
         }
 
-        assertThat(thrown)
-                .isInstanceOf(GitHubPaginationException.class)
-                .hasMessageContaining("outside the API base URI");
+        assertThat(thrown).isInstanceOf(PaginationException.class).hasMessageContaining("outside the API base URI");
         verify(transport, times(1)).execute(any());
     }
 
@@ -1458,7 +1455,7 @@ class GitHubPagerWalkTest {
         }
 
         assertThat(thrown)
-                .isInstanceOf(GitHubPaginationException.class)
+                .isInstanceOf(PaginationException.class)
                 .hasMessageContaining("outside the API base URI")
                 .hasMessageContaining("configure the client with the instance's configured hostname");
     }
@@ -1476,7 +1473,7 @@ class GitHubPagerWalkTest {
         }
 
         assertThat(thrown)
-                .isInstanceOf(GitHubPaginationException.class)
+                .isInstanceOf(PaginationException.class)
                 .hasMessageContaining("outside the API base URI")
                 .hasMessageNotContaining("configured hostname");
     }
@@ -1868,7 +1865,7 @@ class GitHubPagerWalkTest {
             thrown = catchThrowable(() -> action.accept(first));
         }
 
-        assertThat(thrown).isInstanceOf(GitHubPaginationLimitExceededException.class);
+        assertThat(thrown).isInstanceOf(PaginationLimitExceededException.class);
         verify(transport, times(2)).execute(any());
     }
 
@@ -2185,10 +2182,10 @@ class GitHubPagerWalkTest {
         }
 
         assertThat(thrown)
-                .isInstanceOf(GitHubPaginationLimitExceededException.class)
+                .isInstanceOf(PaginationLimitExceededException.class)
                 .extracting(
-                        ex -> ((GitHubPaginationLimitExceededException) ex).maxPages(),
-                        ex -> ((GitHubPaginationLimitExceededException) ex).pageCount())
+                        ex -> ((PaginationLimitExceededException) ex).maxPages(),
+                        ex -> ((PaginationLimitExceededException) ex).pageCount())
                 .containsExactly(1, 1);
         verify(transport, times(1)).execute(any());
     }
@@ -2323,9 +2320,7 @@ class GitHubPagerWalkTest {
             thrown = catchThrowable(first::next);
         }
 
-        assertThat(thrown)
-                .isInstanceOf(GitHubPaginationLoopException.class)
-                .hasMessageContaining("repeated after 1 page(s)");
+        assertThat(thrown).isInstanceOf(PaginationLoopException.class).hasMessageContaining("repeated after 1 page(s)");
         verify(transport, times(1)).execute(any());
     }
 
@@ -2340,7 +2335,7 @@ class GitHubPagerWalkTest {
             thrown = catchThrowable(first::next);
         }
 
-        assertThat(thrown).isInstanceOf(GitHubPaginationLoopException.class);
+        assertThat(thrown).isInstanceOf(PaginationLoopException.class);
         verify(transport, times(1)).execute(any());
     }
 
@@ -2356,7 +2351,24 @@ class GitHubPagerWalkTest {
         }
 
         assertThat(thrown)
-                .isInstanceOf(GitHubPaginationException.class)
+                .isInstanceOf(PaginationException.class)
+                .hasMessageContaining("outside the API base URI")
+                .hasMessageNotContaining("configured hostname");
+    }
+
+    @Test
+    void loadNext_shouldNotHint_whenTheLinkHostIsNotAValidHostName() throws Exception {
+        when(transport.execute(any()))
+                .thenReturn(jsonResponseWithLink("users-one-two.json", "<https://my_host/repos?page=2>; rel=\"next\""));
+
+        final Throwable thrown;
+        try (final GitHubClient client = TestClients.client(TestHosts.GHES, transport)) {
+            final GitHubPage<TestUser> first = load(client, "/repos", GitHubPageNumberRequest.of(1, 2));
+            thrown = catchThrowable(first::next);
+        }
+
+        assertThat(thrown)
+                .isInstanceOf(PaginationException.class)
                 .hasMessageContaining("outside the API base URI")
                 .hasMessageNotContaining("configured hostname");
     }

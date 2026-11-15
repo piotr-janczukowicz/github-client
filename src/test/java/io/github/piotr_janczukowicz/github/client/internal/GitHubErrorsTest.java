@@ -54,6 +54,29 @@ class GitHubErrorsTest {
         });
     }
 
+    @Test
+    void parse_shouldReplaceControlCharactersInTheMessageAndTheItems_whenTheBodyHoldsThem() {
+        final String json = "{\"message\":\"Bad\\nWARN forged\\u001b[0m\","
+                + "\"errors\":[{\"resource\":\"Issue\\r\",\"field\":\"ti\\ttle\",\"code\":\"invalid\\n\","
+                + "\"message\":\"no\\u0085pe\"}]}";
+
+        final GitHubErrors.ParsedError parsed =
+                GitHubErrors.parse(json.getBytes(StandardCharsets.UTF_8), 422, StandardCharsets.UTF_8);
+
+        assertSoftly(softly -> {
+            softly.assertThat(parsed.message()).isEqualTo("Bad WARN forged [0m");
+            softly.assertThat(parsed.errors())
+                    .singleElement()
+                    .extracting(
+                            GitHubValidationError::resource,
+                            GitHubValidationError::field,
+                            GitHubValidationError::code,
+                            GitHubValidationError::message)
+                    .containsExactly("Issue ", "ti tle", "invalid ", "no pe");
+            softly.assertThat(parsed.rawBody()).contains("\\n");
+        });
+    }
+
     @ParameterizedTest
     @ValueSource(ints = {301, 302, 307})
     void toException_shouldDropLocationHeader_whenRedirectStatus(final int status) {

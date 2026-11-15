@@ -4,9 +4,8 @@ import static io.github.piotr_janczukowicz.util.ValidationUtils.requireNonNull;
 
 import io.github.piotr_janczukowicz.github.pagination.GitHubNoneRequest;
 import io.github.piotr_janczukowicz.github.pagination.GitHubPageRequest;
-import io.github.piotr_janczukowicz.http.uri.HttpUris;
+import io.github.piotr_janczukowicz.pagination.PageQueries;
 import io.github.piotr_janczukowicz.pagination.PaginationConfiguration;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,15 +55,7 @@ public final class GitHubPageQueries {
         requireNonNull(config, "config");
 
         final OptionalInt explicit = request.explicitPerPage();
-        if (explicit.isEmpty()) {
-            return Math.min(config.perPage(), maxPerPage);
-        }
-
-        final int value = explicit.getAsInt();
-        if (value > maxPerPage) {
-            throw new IllegalArgumentException("perPage must be at most " + maxPerPage);
-        }
-        return value;
+        return PageQueries.boundPerPage(explicit.isPresent() ? explicit.getAsInt() : null, config, maxPerPage);
     }
 
     /**
@@ -86,13 +77,11 @@ public final class GitHubPageQueries {
         requireNonNull(request, "request");
         requireNonNull(baseQuery, "baseQuery");
 
-        final Map<String, List<String>> query = HttpUris.copyQueryValues(baseQuery);
-        final Map<String, String> token = new LinkedHashMap<>();
-        request.putQueryParameters(token);
-        token.forEach((name, value) -> query.put(name, List.of(value)));
+        final Map<String, String> parameters = new LinkedHashMap<>();
+        request.putQueryParameters(parameters);
         if (sendPerPage && !(request instanceof GitHubNoneRequest)) {
-            query.put("per_page", List.of(String.valueOf(perPage)));
+            parameters.put("per_page", String.valueOf(perPage));
         }
-        return Collections.unmodifiableMap(query);
+        return PageQueries.withParameters(baseQuery, parameters);
     }
 }

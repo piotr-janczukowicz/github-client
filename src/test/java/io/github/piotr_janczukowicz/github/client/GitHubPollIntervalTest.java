@@ -59,7 +59,7 @@ class GitHubPollIntervalTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"abc", "-5", "1.5", "99999999999999999999"})
+    @ValueSource(strings = {"abc", "-5", "1.5", "99999999999999999999", "+5"})
     void of_shouldBeEmpty_whenHeaderIsNotWholeNonNegativeSeconds(final String value) {
         final HttpResult<Void> result = resultWith(Map.of(GitHubHeaders.POLL_INTERVAL, List.of(value)));
 

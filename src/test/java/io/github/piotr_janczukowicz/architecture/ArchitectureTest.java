@@ -69,6 +69,22 @@ class ArchitectureTest {
     }
 
     @Test
+    void unitTests_shouldNotUseTheJsonCodecs() {
+        final JavaClasses all = new ImportedClasses("io.github.piotr_janczukowicz").all();
+
+        noClasses()
+                .that()
+                .areAnnotatedWith("io.github.piotr_janczukowicz.testsupport.UnitTest")
+                .and()
+                .doNotHaveSimpleName("GitHubJsonCodecsTest")
+                .should()
+                .dependOnClassesThat()
+                .haveFullyQualifiedName("io.github.piotr_janczukowicz.github.json.GitHubJsonCodecs")
+                .as("a unit test calls the methods of its class; JSON is read in the mapping tests")
+                .check(all);
+    }
+
+    @Test
     void testClasses_shouldCarryATagThatMavenRuns() {
         final JavaClasses all = new ImportedClasses("io.github.piotr_janczukowicz").all();
         final List<String> untagged = all.stream()
@@ -78,11 +94,14 @@ class ArchitectureTest {
                 .filter(clazz -> !clazz.isAnnotatedWith("io.github.piotr_janczukowicz.testsupport.UnitTest")
                         && !clazz.isAnnotatedWith("io.github.piotr_janczukowicz.testsupport.IntegrationTest")
                         && !clazz.isAnnotatedWith("org.junit.jupiter.api.Tag"))
+                .filter(clazz -> clazz.getAllRawSuperclasses().stream()
+                        .noneMatch(type -> type.getName()
+                                .equals("io.github.piotr_janczukowicz.testsupport.mapping.AbstractMappingTest")))
                 .map(JavaClass::getName)
                 .toList();
 
         assertThat(untagged)
-                .as("test classes without @UnitTest, @IntegrationTest or @Tag")
+                .as("test classes without @UnitTest, @IntegrationTest, @Tag or the mapping test base")
                 .isEmpty();
     }
 }

@@ -24,8 +24,8 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -33,7 +33,6 @@ import static org.mockito.Mockito.when;
 import io.github.piotr_janczukowicz.github.client.exception.GitHubApiException;
 import io.github.piotr_janczukowicz.github.client.exception.GitHubForbiddenException;
 import io.github.piotr_janczukowicz.github.client.pagination.GitHubListSpec;
-import io.github.piotr_janczukowicz.github.json.GitHubJsonCodecs;
 import io.github.piotr_janczukowicz.github.pagination.GitHubPage;
 import io.github.piotr_janczukowicz.github.pagination.GitHubPageNumberRequest;
 import io.github.piotr_janczukowicz.github.pagination.GitHubPageRequest;
@@ -471,7 +470,7 @@ class GitHubCallerTest {
     @Test
     void fetchOrEmpty_shouldReturnEmpty_whenNotFound() throws Exception {
         when(transport.execute(any())).thenReturn(response(HttpStatus.NOT_FOUND.code(), "{\"message\":\"Not Found\"}"));
-        final JsonCodec codec = spy(GitHubJsonCodecs.defaults());
+        final JsonCodec codec = mock(JsonCodec.class);
 
         final Optional<TestUser> user;
         try (final GitHubClient client = TestGitHubClients.raw(
@@ -571,7 +570,7 @@ class GitHubCallerTest {
     @Test
     void isExisting_shouldReturnFalse_whenNotFound() throws Exception {
         when(transport.execute(any())).thenReturn(response(HttpStatus.NOT_FOUND.code(), "{\"message\":\"Not Found\"}"));
-        final JsonCodec codec = spy(GitHubJsonCodecs.defaults());
+        final JsonCodec codec = mock(JsonCodec.class);
 
         final boolean exists;
         try (final GitHubClient client = TestGitHubClients.raw(

@@ -311,7 +311,7 @@ public final class DefaultGitHubClient extends HttpClient implements GitHubClien
 
         private void requireBuildable() {
             requireNonNull(userAgent, USER_AGENT_PARAMETER);
-            requireSecureOrAllowed(configuration.baseUri());
+            HttpUris.requireSecureOrAllowed(configuration.baseUri(), "GitHub", isInsecureHttpAllowed);
         }
 
         // The console of a GHES host, https://HOST/manage/v1/: the same stack, an origin guard of its own and no auth.
@@ -366,21 +366,6 @@ public final class DefaultGitHubClient extends HttpClient implements GitHubClien
                             GitHubHeaders.API_VERSION,
                             API_VERSION)
                     .merge(defaultHeaders);
-        }
-
-        private void requireSecureOrAllowed(final URI baseUri) {
-            if (!"http".equalsIgnoreCase(baseUri.getScheme()) || HttpUris.isLoopbackHost(baseUri.getHost())) {
-                return;
-            }
-            if (!isInsecureHttpAllowed) {
-                throw new IllegalStateException("GitHub base URI " + HttpUris.describeSafe(baseUri)
-                        + " is plain http, which would send the credentials unencrypted;"
-                        + " use https, or call allowInsecureHttp(true) for a trusted network");
-            }
-            LOG.atWarn()
-                    .setMessage("GitHub base URI {} is plain http: the credentials are sent unencrypted")
-                    .addArgument(HttpUris.describeSafe(baseUri))
-                    .log();
         }
     }
 }
