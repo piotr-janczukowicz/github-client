@@ -59,11 +59,18 @@ class GitHubPollIntervalTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"abc", "-5", "1.5", "99999999999999999999"})
+    @ValueSource(strings = {"abc", "-5", "1.5", "99999999999999999999", "+5", "٣", "6 0", ""})
     void of_shouldBeEmpty_whenHeaderIsNotWholeNonNegativeSeconds(final String value) {
         final HttpResult<Void> result = resultWith(Map.of(GitHubHeaders.POLL_INTERVAL, List.of(value)));
 
         assertThat(GitHubPollInterval.of(result)).isEmpty();
+    }
+
+    @Test
+    void of_shouldIgnoreSurroundingWhitespace_whenHeaderHoldsWholeSeconds() {
+        final HttpResult<Void> result = resultWith(Map.of(GitHubHeaders.POLL_INTERVAL, List.of(" 60 ")));
+
+        assertThat(GitHubPollInterval.of(result)).contains(Duration.ofSeconds(60));
     }
 
     private static HttpResult<Void> resultWith(final Map<String, List<String>> headers) {

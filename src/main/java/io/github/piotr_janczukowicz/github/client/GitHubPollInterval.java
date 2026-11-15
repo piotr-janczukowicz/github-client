@@ -4,8 +4,10 @@ import static io.github.piotr_janczukowicz.util.ValidationUtils.requireNonNull;
 
 import io.github.piotr_janczukowicz.github.GitHubHeaders;
 import io.github.piotr_janczukowicz.http.client.HttpResult;
+import io.github.piotr_janczukowicz.util.NumberUtils;
 import java.time.Duration;
 import java.util.Optional;
+import java.util.OptionalLong;
 
 /** Reads the interval that GitHub advises between polls of a resource. */
 public final class GitHubPollInterval {
@@ -29,11 +31,9 @@ public final class GitHubPollInterval {
     }
 
     private static Optional<Duration> wholeSeconds(final String value) {
-        try {
-            final long seconds = Long.parseLong(value.trim());
-            return seconds < 0 ? Optional.empty() : Optional.of(Duration.ofSeconds(seconds));
-        } catch (final NumberFormatException unused) {
-            return Optional.empty();
-        }
+        final OptionalLong seconds = NumberUtils.parseLong(value);
+        return seconds.isEmpty() || seconds.getAsLong() < 0
+                ? Optional.empty()
+                : Optional.of(Duration.ofSeconds(seconds.getAsLong()));
     }
 }

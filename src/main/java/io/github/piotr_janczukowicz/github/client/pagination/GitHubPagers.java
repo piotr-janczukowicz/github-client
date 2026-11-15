@@ -8,9 +8,6 @@ import io.github.piotr_janczukowicz.github.pagination.GitHubPageRequest;
 import io.github.piotr_janczukowicz.github.pagination.GitHubPageRequestKind;
 import io.github.piotr_janczukowicz.github.pagination.GitHubPageRequestKindValidators;
 import io.github.piotr_janczukowicz.github.pagination.GitHubPageWalk;
-import io.github.piotr_janczukowicz.github.pagination.GitHubPaginationException;
-import io.github.piotr_janczukowicz.github.pagination.GitHubPaginationLimitExceededException;
-import io.github.piotr_janczukowicz.github.pagination.GitHubPaginationLoopException;
 import io.github.piotr_janczukowicz.github.pagination.GitHubSearchEnvelope;
 import io.github.piotr_janczukowicz.github.pagination.GitHubStartIndexRequest;
 import io.github.piotr_janczukowicz.github.pagination.GitHubTaskCounts;
@@ -23,14 +20,14 @@ import io.github.piotr_janczukowicz.http.client.HttpClientExecutor;
 import io.github.piotr_janczukowicz.http.client.HttpOriginViolationException;
 import io.github.piotr_janczukowicz.http.uri.HttpUris;
 import io.github.piotr_janczukowicz.pagination.LinkHeader;
+import io.github.piotr_janczukowicz.pagination.PageLinks;
+import io.github.piotr_janczukowicz.pagination.PageWalkGuard;
 import io.github.piotr_janczukowicz.pagination.PaginationConfiguration;
 import io.github.piotr_janczukowicz.pagination.PaginationException;
+import io.github.piotr_janczukowicz.pagination.PaginationLimitExceededException;
 import java.io.IOException;
 import java.net.URI;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -57,9 +54,9 @@ import org.slf4j.LoggerFactory;
  * {@code per_page} is sent. {@code total_count} is not consulted, so a drifting count never hides a {@code next} link.
  *
  * <p>When {@link PaginationConfiguration#maxPages()} pages were read and another page is still available, loading the
- * next one fails with {@link GitHubPaginationLimitExceededException}; it never silently stops early. A relative
- * {@code Link} target is resolved against the URI of the request that returned the header (RFC 8288) and still passes
- * the client's origin guard. The walk is confined to one thread; see {@link GitHubPage}.
+ * next one fails with {@link PaginationLimitExceededException}; it never silently stops early. A relative {@code Link}
+ * target is resolved against the URI of the request that returned the header (RFC 8288) and still passes the client's
+ * origin guard. The walk is confined to one thread; see {@link GitHubPage}.
  */
 public final class GitHubPagers {
 
@@ -233,9 +230,8 @@ public final class GitHubPagers {
         private final boolean isPerPageSent;
         private final int perPage;
         private final int initialPage;
-        private final @Nullable Integer maxPages;
         private final Shape<T> shape;
-        private final Set<String> followedLinks = new HashSet<>();
+        private final PageWalkGuard guard;
         private final GitHubPageRequest firstRequest;
         private URI currentUri;
         private int latestPageCount;
@@ -260,33 +256,16 @@ public final class GitHubPagers {
             }
             this.perPage = GitHubPageQueries.boundPerPage(request, pagination, paging.maxPerPage());
             this.initialPage = pageNumber(request);
-            this.maxPages = pagination.maxPages();
             this.firstRequest = request;
             this.latestStartIndex = startIndexOf(request);
             this.currentUri = HttpUris.resolveApiPath(http.baseUri(), path, Map.of());
-            // The first request counts as visited, so a Link rel="next" that points back at it is caught at once
-            // instead of after one extra page.
-            followedLinks.add(visitedKey(HttpUris.resolveApiPath(
-                    http.baseUri(),
-                    path,
-                    GitHubPageQueries.queryValues(request, this.baseQuery, perPage, isPerPageSent))));
+            this.guard = new PageWalkGuard(
+                    pagination.maxPages(),
+                    HttpUris.resolveApiPath(
+                            http.baseUri(),
+                            path,
+                            GitHubPageQueries.queryValues(request, this.baseQuery, perPage, isPerPageSent)));
             this.shape = shape;
-        }
-
-        // The same page with its query parameters in another order is the same page, so a server that alternates the
-        // order cannot walk the caller in circles.
-        private static String visitedKey(final URI uri) {
-            final String rawQuery = uri.getRawQuery();
-            final StringBuilder key = new StringBuilder(uri.getScheme())
-                    .append("://")
-                    .append(uri.getRawAuthority())
-                    .append(uri.getRawPath());
-            if (rawQuery != null) {
-                final String[] parameters = rawQuery.split("&");
-                Arrays.sort(parameters);
-                key.append('?').append(String.join("&", parameters));
-            }
-            return key.toString();
         }
 
         private static @Nullable GitHubStartIndexRequest startIndexOf(final GitHubPageRequest request) {
@@ -342,13 +321,7 @@ public final class GitHubPagers {
         }
 
         private GitHubPage<T> loadPage(final URI link, final int pageCount) throws IOException {
-            if (maxPages != null && pageCount >= maxPages) {
-                throw new GitHubPaginationLimitExceededException(maxPages, pageCount);
-            }
-            if (followedLinks.contains(visitedKey(link))) {
-                throw new GitHubPaginationLoopException(
-                        "Link rel=\"next\" repeated after " + pageCount + " page(s): " + HttpUris.describeSafe(link));
-            }
+            guard.requireNext(link, pageCount);
             LOG.atDebug()
                     .setMessage("Loading page {} of {}: {}")
                     .addArgument(pageCount + 1)
@@ -356,7 +329,7 @@ public final class GitHubPagers {
                     .addArgument(() -> HttpUris.describeSafe(link))
                     .log();
             final GitHubPage<T> page = toPage(execute(link), pageCount + 1);
-            followedLinks.add(visitedKey(link));
+            guard.markFollowed(link);
             currentUri = link;
             return page;
         }
@@ -372,27 +345,13 @@ public final class GitHubPagers {
                 return http.execute(HttpCall.get(link).withHeaders(overlayHeaders));
             } catch (final HttpOriginViolationException ex) {
                 // The origin guard refused the server-supplied Link target.
-                throw new GitHubPaginationException(outsideBaseMessage(link), ex);
+                throw new PaginationException(outsideBaseMessage(link), ex);
             }
         }
 
         private String outsideBaseMessage(final URI link) {
             final String message = "Link rel=\"next\" is outside the API base URI: " + HttpUris.describeSafe(link);
-            return differsOnlyByOrigin(link) ? message + HOST_HINT : message;
-        }
-
-        private boolean differsOnlyByOrigin(final URI link) {
-            final URI base = http.baseUri();
-            return !originOf(base).equals(originOf(link))
-                    && link.getPath() != null
-                    && link.getPath().startsWith(base.getPath());
-        }
-
-        private static String originOf(final URI uri) {
-            final String scheme = String.valueOf(uri.getScheme()).toLowerCase(Locale.ROOT);
-            final int defaultPort = "https".equals(scheme) ? 443 : 80;
-            final int port = uri.getPort() == -1 ? defaultPort : uri.getPort();
-            return scheme + "://" + String.valueOf(uri.getHost()).toLowerCase(Locale.ROOT) + ":" + port;
+            return PageLinks.differsOnlyByOrigin(http.baseUri(), link) ? message + HOST_HINT : message;
         }
 
         private Optional<URI> nextLink() {
@@ -404,7 +363,7 @@ public final class GitHubPagers {
                 logEnd("there is no Link header");
                 return Optional.empty();
             }
-            final Optional<URI> next = parseNext(linkHeader).map(this::absoluteLink);
+            final Optional<URI> next = parseNext(linkHeader).map(link -> PageLinks.absolute(currentUri, link));
             if (next.isEmpty()) {
                 logEnd("the Link header has no rel=\"next\"");
             }
@@ -412,11 +371,7 @@ public final class GitHubPagers {
         }
 
         private static Optional<URI> parseNext(final String header) {
-            try {
-                return LinkHeader.parse(header).next();
-            } catch (final PaginationException ex) {
-                throw new GitHubPaginationException(ex.getMessage(), ex);
-            }
+            return LinkHeader.parse(header).next();
         }
 
         private void logEnd(final String reason) {
@@ -441,19 +396,6 @@ public final class GitHubPagers {
             latestPageCount = pageCount;
             resultsSeen += items.size();
             return decoded.toPage(new Walk<>(this), pageCount);
-        }
-
-        private URI absoluteLink(final URI link) {
-            if (link.isAbsolute()) {
-                return link;
-            }
-            try {
-                return HttpUris.resolveReference(currentUri, link.toString());
-            } catch (final IllegalArgumentException ex) {
-                throw new GitHubPaginationException(
-                        "Link rel=\"next\" cannot be resolved against the request URI: " + HttpUris.describeSafe(link),
-                        ex);
-            }
         }
     }
 }

@@ -19,11 +19,13 @@ import io.github.piotr_janczukowicz.http.HttpMethod;
 import io.github.piotr_janczukowicz.http.HttpResponse;
 import io.github.piotr_janczukowicz.json.JsonCodec;
 import io.github.piotr_janczukowicz.util.ListUtils;
+import io.github.piotr_janczukowicz.util.StringUtils;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +35,9 @@ public final class GitHubErrors {
 
     /** Largest error body that is parsed as JSON; GitHub error objects are a few hundred bytes. */
     static final int MAX_JSON_BYTES = 1_048_576;
+
+    private static final Pattern INVISIBLE_FORMATTING =
+            Pattern.compile("[\u200B-\u200F\u2028-\u202E\u2060-\u2069\uFEFF]");
 
     private static final Logger LOG = LoggerFactory.getLogger(GitHubErrors.class);
 
@@ -118,9 +123,9 @@ public final class GitHubErrors {
 
     // A JsonCodec never returns null (a JSON null fails with an IllegalStateException), so body is always a value.
     private static ParsedError fromBody(final GitHubErrorBody body, final int statusCode, final String rawBody) {
-        final String jsonMessage = body.message();
+        final String jsonMessage = scrubbed(body.message());
         final String message = isBlank(jsonMessage) ? fallbackMessage(statusCode) : jsonMessage;
-        return new ParsedError(message, body.documentationUrl(), toValidationErrors(body.errors()), rawBody);
+        return new ParsedError(message, scrubbed(body.documentationUrl()), toValidationErrors(body.errors()), rawBody);
     }
 
     private static List<GitHubValidationError> toValidationErrors(final List<GitHubErrorBody.Item> items) {
@@ -128,7 +133,20 @@ public final class GitHubErrors {
     }
 
     private static GitHubValidationError toValidationError(final GitHubErrorBody.Item item) {
-        return new GitHubValidationError(item.resource(), item.field(), item.code(), item.message());
+        return new GitHubValidationError(
+                scrubbed(item.resource()), scrubbed(item.field()), scrubbed(item.code()), scrubbed(item.message()));
+    }
+
+    // Server text reaches logs through the exception message, so a character that could forge a log line, an escape
+    // sequence or a reordered display becomes a space: the ISO control characters, the Unicode line and paragraph
+    // separators, the zero-width and bidirectional marks and the byte order mark. The raw body keeps the text as it
+    // came.
+    private static @Nullable String scrubbed(final @Nullable String text) {
+        return text == null
+                ? null
+                : INVISIBLE_FORMATTING
+                        .matcher(StringUtils.replaceControlCharacters(text, ' '))
+                        .replaceAll(" ");
     }
 
     private static String fallbackMessage(final int statusCode) {

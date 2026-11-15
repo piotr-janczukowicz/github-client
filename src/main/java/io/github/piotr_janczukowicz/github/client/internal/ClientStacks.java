@@ -78,7 +78,7 @@ public final class ClientStacks {
             final HttpTransportConfiguration transport = configuration.transport();
             logStack(configuration, transport, mutationInterval);
             final HttpTransport retried = retrying.apply(
-                    paced(
+                    MutationPacingHttpTransport.pacedBy(
                             new ConcurrencyLimitingHttpTransport(
                                     base, transport.maxConcurrentRequests(), transport.maxSlotWait()),
                             mutationInterval),
@@ -141,15 +141,6 @@ public final class ClientStacks {
                 .addArgument(() -> configuration.retry().attempts())
                 .addArgument(configuration.conditionalCacheMaxEntries())
                 .log();
-    }
-
-    // A zero interval, which only a GHES configuration allows, leaves the mutations unpaced.
-    private static HttpTransport paced(final HttpTransport delegate, final Duration mutationInterval) {
-        if (mutationInterval.isZero()) {
-            return delegate;
-        }
-        return new MutationPacingHttpTransport(
-                delegate, mutationInterval, MutationPacingHttpTransport.DEFAULT_MUTATION_METHODS);
     }
 
     private static RetryConfiguration githubRetry(final RetryConfiguration retry) {

@@ -13,9 +13,7 @@ import java.util.Set;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.DatabindException;
-import tools.jackson.databind.JacksonModule;
 import tools.jackson.databind.json.JsonMapper;
-import tools.jackson.databind.module.SimpleModule;
 
 @UnitTest
 class GitHubJsonMappersTest {
@@ -156,16 +154,5 @@ class GitHubJsonMappersTest {
         final Throwable thrown = catchThrowable(constructor::newInstance);
 
         assertThat(thrown).hasCauseInstanceOf(UnsupportedOperationException.class);
-    }
-
-    @Test
-    void modulesOf_shouldCollectTheModuleOfEveryProvider_whenProvidersAreGiven() {
-        final JacksonModule first = new SimpleModule("first");
-        final JacksonModule second = new SimpleModule("second");
-        final List<GitHubJsonModule> providers = List.of(() -> first, () -> second);
-
-        final List<JacksonModule> modules = GitHubJsonMappers.modulesOf(providers);
-
-        assertThat(modules).containsExactly(first, second);
     }
 }

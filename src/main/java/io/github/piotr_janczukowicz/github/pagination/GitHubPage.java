@@ -6,6 +6,7 @@ import static io.github.piotr_janczukowicz.util.ValidationUtils.requireNonNull;
 import io.github.piotr_janczukowicz.pagination.Page;
 import io.github.piotr_janczukowicz.pagination.Pages;
 import io.github.piotr_janczukowicz.pagination.PaginationConfiguration;
+import io.github.piotr_janczukowicz.pagination.PaginationLimitExceededException;
 import io.github.piotr_janczukowicz.util.ListUtils;
 import java.io.IOException;
 import java.util.List;
@@ -194,8 +195,7 @@ public final class GitHubPage<T> implements Page<T, GitHubPage<T>> {
      *     beyond this page)
      * @throws IllegalStateException if this page is not the latest in the walk
      * @throws IOException if the transport fails while fetching a later page
-     * @throws GitHubPaginationLimitExceededException if a configured {@code maxPages} was reached with more pages
-     *     available
+     * @throws PaginationLimitExceededException if a configured {@code maxPages} was reached with more pages available
      */
     @Override
     public Optional<GitHubPage<T>> next() throws IOException {
@@ -222,8 +222,7 @@ public final class GitHubPage<T> implements Page<T, GitHubPage<T>> {
      * @return unmodifiable concatenated items from walked pages
      * @throws IllegalStateException if this page is not the latest in the walk
      * @throws IOException if the transport fails while fetching a later page
-     * @throws GitHubPaginationLimitExceededException if a configured {@code maxPages} was reached with more pages
-     *     available
+     * @throws PaginationLimitExceededException if a configured {@code maxPages} was reached with more pages available
      */
     public List<T> all() throws IOException {
         session.requireLatest(this);
@@ -271,8 +270,7 @@ public final class GitHubPage<T> implements Page<T, GitHubPage<T>> {
      * @param consumer callback for each page
      * @throws IllegalStateException if this page is not the latest in the walk
      * @throws IOException if the transport fails while fetching a later page
-     * @throws GitHubPaginationLimitExceededException if a configured {@code maxPages} was reached with more pages
-     *     available
+     * @throws PaginationLimitExceededException if a configured {@code maxPages} was reached with more pages available
      */
     public void forEachPage(final Consumer<GitHubPage<T>> consumer) throws IOException {
         requireNonNull(consumer, "consumer");

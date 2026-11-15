@@ -20,13 +20,13 @@ import io.github.piotr_janczukowicz.github.pagination.GitHubPageNumberRequest;
 import io.github.piotr_janczukowicz.github.pagination.GitHubPageRequest;
 import io.github.piotr_janczukowicz.github.pagination.GitHubPageRequestKind;
 import io.github.piotr_janczukowicz.github.pagination.GitHubPageRequestKindValidators;
-import io.github.piotr_janczukowicz.github.pagination.GitHubPaginationException;
-import io.github.piotr_janczukowicz.github.pagination.GitHubPaginationLimitExceededException;
 import io.github.piotr_janczukowicz.github.pagination.GitHubSinceRequest;
 import io.github.piotr_janczukowicz.http.HttpHeaders;
 import io.github.piotr_janczukowicz.json.JsonType;
 import io.github.piotr_janczukowicz.json.JsonTypes;
 import io.github.piotr_janczukowicz.pagination.PaginationConfiguration;
+import io.github.piotr_janczukowicz.pagination.PaginationException;
+import io.github.piotr_janczukowicz.pagination.PaginationLimitExceededException;
 import io.github.piotr_janczukowicz.test.TestClients;
 import io.github.piotr_janczukowicz.test.http.StubHttpServer;
 import io.github.piotr_janczukowicz.test.model.TestUser;
@@ -189,7 +189,7 @@ class GitHubPagerWalkIntegrationTest {
             thrown = catchThrowable(first::next);
         }
 
-        assertThat(thrown).isInstanceOf(GitHubPaginationLimitExceededException.class);
+        assertThat(thrown).isInstanceOf(PaginationLimitExceededException.class);
         HTTP.verifyRequested(GET, ITEMS_PATH, 1);
     }
 
@@ -208,7 +208,7 @@ class GitHubPagerWalkIntegrationTest {
 
         final Throwable thrown = catchThrowable(first::next);
 
-        assertThat(thrown).isInstanceOf(GitHubPaginationException.class).hasMessageContaining("API base URI");
+        assertThat(thrown).isInstanceOf(PaginationException.class).hasMessageContaining("API base URI");
         HTTP.verifyRequested(GET, ITEMS_PATH, 1);
     }
 

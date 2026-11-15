@@ -13,6 +13,7 @@ import io.github.piotr_janczukowicz.http.transport.HttpTransports;
 import io.github.piotr_janczukowicz.json.JsonCodec;
 import io.github.piotr_janczukowicz.pagination.PaginationConfiguration;
 import io.github.piotr_janczukowicz.test.TestClients;
+import io.github.piotr_janczukowicz.test.http.LinkHeaders;
 import io.github.piotr_janczukowicz.test.http.StubHttpServer;
 import io.github.piotr_janczukowicz.util.FileUtils;
 import java.net.URI;
@@ -46,7 +47,7 @@ public final class GitHubClientWireMockSupport {
     }
 
     public static String linkNext(final URI nextUri) {
-        return "<" + nextUri + ">; rel=\"next\"";
+        return LinkHeaders.next(nextUri);
     }
 
     public record WireMockClient(HttpTransport transport, GitHubClient client) implements AutoCloseable {

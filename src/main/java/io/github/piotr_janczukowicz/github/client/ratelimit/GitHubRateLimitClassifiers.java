@@ -8,6 +8,7 @@ import io.github.piotr_janczukowicz.github.json.GitHubJsonCodecs;
 import io.github.piotr_janczukowicz.http.HttpErrorBodies;
 import io.github.piotr_janczukowicz.http.HttpResponse;
 import io.github.piotr_janczukowicz.http.HttpStatus;
+import io.github.piotr_janczukowicz.util.NumberUtils;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.DateTimeException;
@@ -15,6 +16,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,28 +40,29 @@ final class GitHubRateLimitClassifiers {
      * Parses a header value as an integer.
      *
      * @param value header value, surrounding whitespace allowed
-     * @return the number, or {@code null} when {@code value} is not an integer
+     * @return the number, or {@code null} when {@code value} is not a whole ASCII decimal number that fits an
+     *     {@code int}; quota headers are advisory, so a bad one is treated as absent and must not fail a call
      */
     static @Nullable Integer integer(final String value) {
-        try {
-            return Integer.valueOf(value.trim());
-        } catch (final NumberFormatException unused) {
-            // A malformed header is treated as absent: quota headers are advisory, and a bad one must not fail a call.
-            return null;
-        }
+        final OptionalInt number = NumberUtils.parseInt(value);
+        return number.isPresent() ? number.getAsInt() : null;
     }
 
     /**
      * Parses a header value as seconds since the epoch.
      *
      * @param value header value, surrounding whitespace allowed
-     * @return the instant, or {@code null} when {@code value} is not a valid epoch second
+     * @return the instant, or {@code null} when {@code value} is not a whole ASCII decimal number of seconds that an
+     *     {@link Instant} can hold; advisory header, see {@link #integer(String)}
      */
     static @Nullable Instant epochSecond(final String value) {
+        final OptionalLong seconds = NumberUtils.parseLong(value);
+        if (seconds.isEmpty()) {
+            return null;
+        }
         try {
-            return Instant.ofEpochSecond(Long.parseLong(value.trim()));
-        } catch (final NumberFormatException | DateTimeException unused) {
-            // Advisory header, see integer(String).
+            return Instant.ofEpochSecond(seconds.getAsLong());
+        } catch (final DateTimeException outOfRange) {
             return null;
         }
     }

@@ -1,0 +1,12 @@
+{
+  "message": "Validation Failed",
+  "documentation_url": "https://docs.github.com/rest",
+  "errors": [
+    {
+      "resource": "Issue",
+      "field": "title",
+      "code": "missing_field",
+      "message": "needed"
+    }
+  ]
+}
