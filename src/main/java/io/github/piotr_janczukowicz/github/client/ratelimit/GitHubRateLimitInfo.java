@@ -4,9 +4,9 @@ import static io.github.piotr_janczukowicz.util.ValidationUtils.requireNonNull;
 
 import io.github.piotr_janczukowicz.github.GitHubHeaders;
 import io.github.piotr_janczukowicz.http.HttpResponse;
+import io.github.piotr_janczukowicz.util.DateTimeUtils;
 import java.io.Serializable;
 import java.time.Clock;
-import java.time.DateTimeException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
@@ -168,11 +168,7 @@ public record GitHubRateLimitInfo(
     }
 
     private static Instant plus(final Instant instant, final Duration amount) {
-        try {
-            return instant.plus(amount);
-        } catch (final DateTimeException | ArithmeticException unbounded) {
-            return Instant.MAX;
-        }
+        return DateTimeUtils.tryPlus(instant, amount).orElse(Instant.MAX);
     }
 
     /** Rate-limit class: remaining quota exhausted versus retry/backoff. */
