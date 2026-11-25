@@ -111,6 +111,32 @@ public abstract class GitHubResourceApi extends HttpResourceApi {
     }
 
     /**
+     * First page of a list endpoint described by {@code spec}; the same call as {@link #list} under the name the other
+     * {@code pageList} form has.
+     *
+     * @param path API path template
+     * @param query endpoint-specific filters
+     * @param request pagination token
+     * @param spec decode, kinds, and {@code per_page} bind
+     * @param values placeholder values in order
+     * @param <T> item type
+     * @return first HTTP page
+     * @throws IOException if the transport fails
+     * @throws NullPointerException if {@code path}, {@code request}, or {@code spec} is {@code null} or a value is
+     *     {@code null}
+     * @throws IllegalArgumentException if expansion fails or {@code request} is not an allowed kind
+     */
+    protected final <T> GitHubPage<T> pageList(
+            final PathTemplate path,
+            final Map<String, String> query,
+            final GitHubPageRequest request,
+            final GitHubListSpec<T> spec,
+            final Object... values)
+            throws IOException {
+        return list(path, query, request, spec, values);
+    }
+
+    /**
      * First page of a list endpoint described by {@code spec}.
      *
      * @param path API path template
@@ -216,6 +242,21 @@ public abstract class GitHubResourceApi extends HttpResourceApi {
         }
         final Charset charset = response.charset();
         return Optional.of(response.body().mapBytes(bytes -> new String(bytes, charset), () -> ""));
+    }
+
+    /**
+     * Sends {@code call} and returns the body of the answer as text, decoded with the charset of its content type
+     * (UTF-8 when it names none). A successful answer without a body is an empty string.
+     *
+     * @param call the call to send
+     * @return the text of the body
+     * @throws NullPointerException if {@code call} is {@code null}
+     * @throws IOException if the request fails
+     */
+    protected final String fetchText(final HttpCall call) throws IOException {
+        final HttpResponse response = caller.send(requireNonNull(call, "call"));
+        final Charset charset = response.charset();
+        return response.body().mapBytes(bytes -> new String(bytes, charset), () -> "");
     }
 
     @SuppressWarnings("unchecked")

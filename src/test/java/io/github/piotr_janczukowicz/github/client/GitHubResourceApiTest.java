@@ -512,4 +512,59 @@ class GitHubResourceApiTest {
 
         assertThat(page.items()).containsExactly("a", "b");
     }
+
+    @Test
+    void pageList_shouldReturnTheFirstPage_whenGivenASpec() throws Exception {
+        when(transport.execute(any()))
+                .thenReturn(HttpResponses.of(
+                        HttpStatus.OK.code(), Map.of(), HttpBody.of("[\"a\",\"b\"]".getBytes(StandardCharsets.UTF_8))));
+
+        final GitHubPage<String> page = api.pageList(
+                REPOS,
+                Map.of(),
+                GitHubPageNumberRequest.of(1, 10),
+                GitHubListSpec.pages(JsonTypes.listOf(String.class)));
+
+        final HttpRequest sent = singleRequest(transport);
+        assertSoftly(softly -> {
+            softly.assertThat(page.items()).containsExactly("a", "b");
+            softly.assertThat(sent.headers().get(API_VERSION)).contains(GitHubClient.API_VERSION);
+        });
+    }
+
+    @Test
+    void pageList_shouldThrow_whenSpecNull() {
+        final Throwable thrown = catchThrowable(
+                () -> api.pageList(REPOS, Map.of(), GitHubPageRequest.byPage(), (GitHubListSpec<String>) null));
+
+        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessageContaining("spec");
+    }
+
+    @Test
+    void fetchText_shouldDecodeWithCharset_whenContentTypeNamesCharset() throws Exception {
+        when(transport.execute(any()))
+                .thenReturn(HttpResponses.of(
+                        HttpStatus.OK.code(),
+                        Map.of(CONTENT_TYPE, List.of("text/plain; charset=ISO-8859-1")),
+                        HttpBody.of("café".getBytes(StandardCharsets.ISO_8859_1))));
+
+        final String text = api.fetchText(api.get(REPOS_ONE));
+
+        assertThat(text).isEqualTo("café");
+    }
+
+    @ParameterizedTest
+    @MethodSource("emptySuccessBodies")
+    void fetchText_shouldReturnEmptyText_whenSuccessBodyIsEmpty(final HttpBody body) throws Exception {
+        when(transport.execute(any())).thenReturn(HttpResponses.of(HttpStatus.OK.code(), Map.of(), body));
+
+        assertThat(api.fetchText(api.get(REPOS_ONE))).isEmpty();
+    }
+
+    @Test
+    void fetchText_shouldThrow_whenCallNull() {
+        final Throwable thrown = catchThrowable(() -> api.fetchText(null));
+
+        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessageContaining("call");
+    }
 }
