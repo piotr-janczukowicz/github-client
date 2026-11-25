@@ -102,6 +102,10 @@ public final class GitHubPagers {
         requireNonNull(request, "request");
         requireNonNull(spec, "spec");
         GitHubPageRequestKindValidators.requireAllowedPageRequestKind(request, spec.allowedKinds());
+        final GitHubListSpec.SearchDecoder<T> searchDecoder = spec.searchDecoder();
+        if (searchDecoder != null) {
+            return startSearch(executor, pagination, target, request, searchDecoder.bind(DEFAULT_JSON));
+        }
         final GitHubPageDecoder<T> decoder = spec.bindDecoder(DEFAULT_JSON);
         final Paging paging = new Paging(spec.sendPerPage(), spec.maxPerPage());
         final Shape<T> shape = new Shape<>(

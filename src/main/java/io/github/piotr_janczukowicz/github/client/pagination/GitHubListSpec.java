@@ -3,8 +3,11 @@ package io.github.piotr_janczukowicz.github.client.pagination;
 import static io.github.piotr_janczukowicz.util.ValidationUtils.requireBetween;
 import static io.github.piotr_janczukowicz.util.ValidationUtils.requireNonNull;
 
+import io.github.piotr_janczukowicz.github.pagination.GitHubIssueSearchType;
+import io.github.piotr_janczukowicz.github.pagination.GitHubLexicalFallbackReason;
 import io.github.piotr_janczukowicz.github.pagination.GitHubPageRequestKind;
 import io.github.piotr_janczukowicz.github.pagination.GitHubPageRequestKindValidators;
+import io.github.piotr_janczukowicz.github.pagination.GitHubSearchEnvelope;
 import io.github.piotr_janczukowicz.github.pagination.GitHubStartIndexRequest;
 import io.github.piotr_janczukowicz.github.pagination.GitHubTaskCounts;
 import io.github.piotr_janczukowicz.http.HttpResponse;
@@ -15,6 +18,8 @@ import io.github.piotr_janczukowicz.util.SetUtils;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.ToIntFunction;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -26,15 +31,37 @@ import org.jspecify.annotations.Nullable;
  * @param decoder maps one HTTP response to a page body once JSON decode is bound
  * @param sendPerPage whether to send {@code per_page} on the first request
  * @param maxPerPage endpoint maximum for {@code per_page}
+ * @param searchDecoder reads a Search API page with its envelope and makes the walk a search walk (the result cap, the
+ *     envelope on the page), or {@code null} for a list
  * @param <T> item type
  */
 public record GitHubListSpec<T>(
-        Set<GitHubPageRequestKind> allowedKinds, Decoder<T> decoder, boolean sendPerPage, int maxPerPage) {
+        Set<GitHubPageRequestKind> allowedKinds,
+        Decoder<T> decoder,
+        boolean sendPerPage,
+        int maxPerPage,
+        @Nullable SearchDecoder<T> searchDecoder) {
 
     public GitHubListSpec {
         allowedKinds = SetUtils.copyOf(allowedKinds, "allowedKinds");
         requireNonNull(decoder, "decoder");
         requireBetween(maxPerPage, 1, PaginationConfiguration.MAX_PER_PAGE, "maxPerPage");
+    }
+
+    /**
+     * Spec of a list.
+     *
+     * @param allowedKinds accepted active pagination kinds
+     * @param decoder maps one HTTP response to a page body once JSON decode is bound
+     * @param sendPerPage whether to send {@code per_page} on the first request
+     * @param maxPerPage endpoint maximum for {@code per_page}
+     */
+    public GitHubListSpec(
+            final Set<GitHubPageRequestKind> allowedKinds,
+            final Decoder<T> decoder,
+            final boolean sendPerPage,
+            final int maxPerPage) {
+        this(allowedKinds, decoder, sendPerPage, maxPerPage, null);
     }
 
     /**
@@ -195,12 +222,82 @@ public record GitHubListSpec<T>(
     }
 
     /**
+     * Search API page: an object with the matches, their count and whether the result set is incomplete. The walk is a
+     * search walk, which stops at the Search API result cap, and the page carries the envelope.
+     *
+     * @param wrapperType JSON object type
+     * @param items match extractor; {@code null} becomes an empty list
+     * @param totalCount total matches
+     * @param incompleteResults whether GitHub considers the result set incomplete
+     * @param <T> item type
+     * @param <W> wrapper type
+     * @return spec
+     * @throws NullPointerException if an argument is {@code null}
+     */
+    public static <T, W> GitHubListSpec<T> search(
+            final Class<W> wrapperType,
+            final Function<W, @Nullable List<T>> items,
+            final ToIntFunction<W> totalCount,
+            final Predicate<W> incompleteResults) {
+        return search(wrapperType, items, totalCount, incompleteResults, wrapper -> null, wrapper -> null);
+    }
+
+    /**
+     * Search API page of the issue search: like {@link #search(Class, Function, ToIntFunction, Predicate)}, with the
+     * search type and the lexical fallback reasons of the body.
+     *
+     * @param wrapperType JSON object type
+     * @param items match extractor; {@code null} becomes an empty list
+     * @param totalCount total matches
+     * @param incompleteResults whether GitHub considers the result set incomplete
+     * @param searchType the search type of the body, or {@code null}
+     * @param lexicalFallbackReasons the lexical fallback reasons of the body, or {@code null}
+     * @param <T> item type
+     * @param <W> wrapper type
+     * @return spec
+     * @throws NullPointerException if an argument is {@code null}
+     */
+    public static <T, W> GitHubListSpec<T> search(
+            final Class<W> wrapperType,
+            final Function<W, @Nullable List<T>> items,
+            final ToIntFunction<W> totalCount,
+            final Predicate<W> incompleteResults,
+            final Function<W, @Nullable GitHubIssueSearchType> searchType,
+            final Function<W, @Nullable List<GitHubLexicalFallbackReason>> lexicalFallbackReasons) {
+        requireNonNull(wrapperType, "wrapperType");
+        requireNonNull(items, "items");
+        requireNonNull(totalCount, "totalCount");
+        requireNonNull(incompleteResults, "incompleteResults");
+        requireNonNull(searchType, "searchType");
+        requireNonNull(lexicalFallbackReasons, "lexicalFallbackReasons");
+        final SearchDecoder<T> searchDecoder = json -> response -> {
+            final W wrapper = json.decode(response, wrapperType);
+            return new GitHubSearchEnvelope<>(
+                    totalCount.applyAsInt(wrapper),
+                    incompleteResults.test(wrapper),
+                    ListUtils.orEmpty(items.apply(wrapper)),
+                    searchType.apply(wrapper),
+                    lexicalFallbackReasons.apply(wrapper));
+        };
+        return new GitHubListSpec<>(
+                GitHubPageRequestKindValidators.PAGE,
+                json -> response -> {
+                    final GitHubSearchEnvelope<T> envelope =
+                            searchDecoder.bind(json).decode(response);
+                    return GitHubPageBody.of(envelope.items(), envelope.totalCount());
+                },
+                true,
+                PaginationConfiguration.MAX_PER_PAGE,
+                searchDecoder);
+    }
+
+    /**
      * Copy that never sends {@code per_page}.
      *
      * @return spec
      */
     public GitHubListSpec<T> withoutPerPage() {
-        return new GitHubListSpec<>(allowedKinds, decoder, false, maxPerPage);
+        return new GitHubListSpec<>(allowedKinds, decoder, false, maxPerPage, searchDecoder);
     }
 
     /**
@@ -211,7 +308,7 @@ public record GitHubListSpec<T>(
      * @throws IllegalArgumentException if {@code maxPerPage} is outside {@code 1..MAX_PER_PAGE}
      */
     public GitHubListSpec<T> withMaxPerPage(final int maxPerPage) {
-        return new GitHubListSpec<>(allowedKinds, decoder, sendPerPage, maxPerPage);
+        return new GitHubListSpec<>(allowedKinds, decoder, sendPerPage, maxPerPage, searchDecoder);
     }
 
     /**
@@ -255,6 +352,19 @@ public record GitHubListSpec<T>(
          * @return page-body decoder
          */
         GitHubPageDecoder<T> bind(ListJson json);
+    }
+
+    /** Binds JSON decode for a Search API page. */
+    @FunctionalInterface
+    public interface SearchDecoder<T> {
+
+        /**
+         * Decoder that uses {@code json} for body mapping.
+         *
+         * @param json JSON decode
+         * @return decoder of one search page into its envelope
+         */
+        GitHubSearchPageDecoder<T> bind(ListJson json);
     }
 
     /** JSON decode for list wrappers and arrays. */

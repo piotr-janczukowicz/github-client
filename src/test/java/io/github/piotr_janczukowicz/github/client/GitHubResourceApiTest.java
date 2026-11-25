@@ -26,6 +26,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import io.github.piotr_janczukowicz.github.client.pagination.GitHubListSpec;
+import io.github.piotr_janczukowicz.github.pagination.GitHubIssueSearchType;
+import io.github.piotr_janczukowicz.github.pagination.GitHubLexicalFallbackReason;
 import io.github.piotr_janczukowicz.github.pagination.GitHubPage;
 import io.github.piotr_janczukowicz.github.pagination.GitHubPageNumberRequest;
 import io.github.piotr_janczukowicz.github.pagination.GitHubPageRequest;
@@ -530,6 +532,71 @@ class GitHubResourceApiTest {
             softly.assertThat(page.items()).containsExactly("a", "b");
             softly.assertThat(sent.headers().get(API_VERSION)).contains(GitHubClient.API_VERSION);
         });
+    }
+
+    @Test
+    void pageList_shouldReadTheSearchEnvelope_whenTheSpecIsASearch() throws Exception {
+        when(transport.execute(any())).thenReturn(ok("""
+                        {"total_count":7,"incomplete_results":true,"search_type":"hybrid",
+                         "lexical_fallback_reason":["quoted_text"],"items":[{"name":"ruby"},{"name":"java"}]}
+                        """));
+        final GitHubListSpec<String> spec = GitHubListSpec.search(
+                JsonNode.class,
+                body -> body.get("items")
+                        .valueStream()
+                        .map(item -> item.get("name").asString())
+                        .toList(),
+                body -> body.get("total_count").asInt(),
+                body -> body.get("incomplete_results").asBoolean(),
+                body -> GitHubIssueSearchType.fromWire(body.get("search_type").asString()),
+                body -> List.of(GitHubLexicalFallbackReason.QUOTED_TEXT));
+
+        final GitHubPage<String> page =
+                api.pageList(SEARCH_TOPICS, Map.of("q", "ruby"), GitHubPageNumberRequest.of(1, 2), spec);
+
+        assertSoftly(softly -> {
+            softly.assertThat(page.items()).containsExactly("ruby", "java");
+            softly.assertThat(page.totalCount()).isEqualTo(7);
+            softly.assertThat(page.areResultsIncomplete()).isTrue();
+            softly.assertThat(page.searchType()).isEqualTo(GitHubIssueSearchType.HYBRID);
+            softly.assertThat(page.lexicalFallbackReasons()).containsExactly(GitHubLexicalFallbackReason.QUOTED_TEXT);
+        });
+    }
+
+    @Test
+    void pageList_shouldLeaveTheIssueFieldsEmpty_whenTheSearchSpecNamesNone() throws Exception {
+        when(transport.execute(any())).thenReturn(ok("""
+                        {"total_count":1,"incomplete_results":false,"items":[{"name":"ruby"}]}
+                        """));
+        final GitHubListSpec<String> spec = GitHubListSpec.search(
+                JsonNode.class,
+                body -> body.get("items")
+                        .valueStream()
+                        .map(item -> item.get("name").asString())
+                        .toList(),
+                body -> body.get("total_count").asInt(),
+                body -> body.get("incomplete_results").asBoolean());
+
+        final GitHubPage<String> page =
+                api.pageList(SEARCH_TOPICS, Map.of("q", "ruby"), GitHubPageRequest.byPage(), spec);
+
+        assertSoftly(softly -> {
+            softly.assertThat(page.items()).containsExactly("ruby");
+            softly.assertThat(page.areResultsIncomplete()).isFalse();
+            softly.assertThat(page.searchType()).isNull();
+            softly.assertThat(page.lexicalFallbackReasons()).isEmpty();
+        });
+    }
+
+    @Test
+    void pageList_shouldThrow_whenASearchSpecGetsACursorRequest() {
+        final GitHubListSpec<String> spec =
+                GitHubListSpec.search(JsonNode.class, body -> List.of(), body -> 0, body -> false);
+
+        final Throwable thrown = catchThrowable(
+                () -> api.pageList(SEARCH_TOPICS, Map.of("q", "ruby"), GitHubPageRequest.byCursor(), spec));
+
+        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessageContaining("cursor");
     }
 
     @Test

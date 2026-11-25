@@ -6,6 +6,7 @@ import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
 import io.github.piotr_janczukowicz.github.pagination.GitHubPageRequestKindValidators;
 import io.github.piotr_janczukowicz.github.pagination.GitHubTaskCounts;
+import io.github.piotr_janczukowicz.http.HttpResponse;
 import io.github.piotr_janczukowicz.json.JsonType;
 import io.github.piotr_janczukowicz.json.JsonTypes;
 import io.github.piotr_janczukowicz.pagination.PaginationConfiguration;
@@ -47,6 +48,63 @@ class GitHubListSpecTest {
             softly.assertThat(spec.allowedKinds()).isEqualTo(GitHubPageRequestKindValidators.CURSOR);
             softly.assertThat(spec.sendPerPage()).isTrue();
         });
+    }
+
+    @Test
+    void search_shouldAllowPageKindAndBeASearchSpec_whenCalled() {
+        final GitHubListSpec<String> spec =
+                GitHubListSpec.search(String.class, wrapper -> List.of(), wrapper -> 0, wrapper -> false);
+
+        assertSoftly(softly -> {
+            softly.assertThat(spec.allowedKinds()).isEqualTo(GitHubPageRequestKindValidators.PAGE);
+            softly.assertThat(spec.sendPerPage()).isTrue();
+            softly.assertThat(spec.searchDecoder()).isNotNull();
+        });
+    }
+
+    @Test
+    void search_shouldReadItemsAndTotal_whenReadAsAList() {
+        final GitHubListSpec<String> spec = GitHubListSpec.search(
+                String.class, wrapper -> List.of(wrapper.split(",")), String::length, wrapper -> false);
+        final GitHubListSpec.ListJson json = new GitHubListSpec.ListJson() {
+            @Override
+            public <R> R decode(final HttpResponse response, final Class<R> type) {
+                return type.cast("a,b");
+            }
+
+            @Override
+            public <R> R decode(final HttpResponse response, final JsonType<R> type) {
+                throw new UnsupportedOperationException();
+            }
+        };
+
+        final GitHubPageBody<String> body = spec.bindDecoder(json).decode(HttpResponses.ok("x"));
+
+        assertSoftly(softly -> {
+            softly.assertThat(body.items()).containsExactly("a", "b");
+            softly.assertThat(body.totalCount()).isEqualTo(3);
+        });
+    }
+
+    @Test
+    void pages_shouldNotBeASearchSpec_whenCalled() {
+        assertThat(GitHubListSpec.pages(STRINGS).searchDecoder()).isNull();
+    }
+
+    @Test
+    void withMaxPerPage_shouldKeepTheSearchDecoder_whenSearchSpec() {
+        final GitHubListSpec<String> spec =
+                GitHubListSpec.search(String.class, wrapper -> List.of(), wrapper -> 0, wrapper -> false);
+
+        assertThat(spec.withMaxPerPage(30).withoutPerPage().searchDecoder()).isSameAs(spec.searchDecoder());
+    }
+
+    @Test
+    void search_shouldThrow_whenAnArgumentIsNull() {
+        final Throwable thrown = catchThrowable(
+                () -> GitHubListSpec.<String, String>search(String.class, null, wrapper -> 0, wrapper -> false));
+
+        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessageContaining("items");
     }
 
     @Test
