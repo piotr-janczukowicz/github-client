@@ -234,9 +234,21 @@ public abstract class GitHubResourceApi extends HttpResourceApi {
      * @throws NullPointerException if {@code call} or {@code mediaType} is {@code null}
      */
     protected final Optional<String> fetchTextOrEmpty(final HttpCall call, final String mediaType) throws IOException {
-        final HttpCall accepting =
-                requireNonNull(call, "call").withHeader(ACCEPT, requireNonNull(mediaType, "mediaType"));
-        final HttpResponse response = caller.send(accepting, Set.of(HttpStatus.NOT_FOUND.code()));
+        return fetchTextOrEmpty(
+                requireNonNull(call, "call").withHeader(ACCEPT, requireNonNull(mediaType, "mediaType")));
+    }
+
+    /**
+     * Sends {@code call}, which names its own {@code Accept}, and returns the body as text, decoded as
+     * {@link #fetchTextOrEmpty(HttpCall, String)} does.
+     *
+     * @param call GET call to send
+     * @return body text, {@code ""} when a successful response has no body, or an empty {@link Optional} on HTTP 404
+     * @throws IOException if the transport fails
+     * @throws NullPointerException if {@code call} is {@code null}
+     */
+    protected final Optional<String> fetchTextOrEmpty(final HttpCall call) throws IOException {
+        final HttpResponse response = caller.send(requireNonNull(call, "call"), Set.of(HttpStatus.NOT_FOUND.code()));
         if (response.hasStatus(HttpStatus.NOT_FOUND)) {
             return Optional.empty();
         }

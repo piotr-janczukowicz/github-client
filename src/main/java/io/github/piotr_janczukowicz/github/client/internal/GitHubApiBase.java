@@ -44,6 +44,20 @@ public record GitHubApiBase(URI uri) {
     }
 
     /**
+     * The base that upload paths resolve against: {@code https://uploads.github.com/} for github.com,
+     * {@code https://uploads.SUBDOMAIN.ghe.com/} for {@code api.SUBDOMAIN.ghe.com}, {@code https://HOST/api/uploads/}
+     * on the port of the API for a GitHub Enterprise Server host.
+     *
+     * @return the uploads base URI, or empty if the base has no known uploads origin
+     */
+    public Optional<URI> uploadsUri() {
+        if (isGhes()) {
+            return Optional.of(uri.resolve(GHES_UPLOADS_PATH));
+        }
+        return Optional.ofNullable(uploadsHost()).map(host -> URI.create("https://" + host + "/"));
+    }
+
+    /**
      * The host that takes uploads of this API: {@code uploads.github.com} for github.com,
      * {@code uploads.SUBDOMAIN.ghe.com} for {@code api.SUBDOMAIN.ghe.com}.
      *

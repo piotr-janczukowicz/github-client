@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.github.piotr_janczukowicz.github.client.pagination.GitHubListSpec;
@@ -52,6 +53,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentCaptor;
 import tools.jackson.databind.JsonNode;
 
 @UnitTest
@@ -440,6 +442,31 @@ class GitHubResourceApiTest {
         final Optional<String> text = api.fetchTextOrEmpty(api.get(REPOS_ONE), "application/vnd.github.diff");
 
         assertThat(text).isEmpty();
+    }
+
+    @Test
+    void fetchTextOrEmpty_shouldSendTheCallAsGiven_whenNoMediaTypeGiven() throws Exception {
+        when(transport.execute(any()))
+                .thenReturn(HttpResponses.of(
+                        HttpStatus.OK.code(), Map.of(), HttpBody.of("diff".getBytes(StandardCharsets.UTF_8))));
+
+        final Optional<String> text =
+                api.fetchTextOrEmpty(api.get(REPOS_ONE).withHeader(ACCEPT, "application/vnd.github.patch"));
+
+        final ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(transport).execute(captor.capture());
+        assertSoftly(softly -> {
+            softly.assertThat(text).contains("diff");
+            softly.assertThat(captor.getValue().headers().get(ACCEPT)).contains("application/vnd.github.patch");
+        });
+    }
+
+    @Test
+    void fetchTextOrEmpty_shouldReturnEmpty_whenNoMediaTypeGivenAndResponseIsNotFound() throws Exception {
+        when(transport.execute(any()))
+                .thenReturn(HttpResponses.of(HttpStatus.NOT_FOUND.code(), Map.of(), HttpBody.absent()));
+
+        assertThat(api.fetchTextOrEmpty(api.get(REPOS_ONE))).isEmpty();
     }
 
     private static Stream<HttpBody> emptySuccessBodies() {

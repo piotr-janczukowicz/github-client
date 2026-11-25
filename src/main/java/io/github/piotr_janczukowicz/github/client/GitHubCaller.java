@@ -18,12 +18,15 @@ import io.github.piotr_janczukowicz.http.HttpHeaderNames;
 import io.github.piotr_janczukowicz.http.HttpMethod;
 import io.github.piotr_janczukowicz.http.client.AbstractHttpCaller;
 import io.github.piotr_janczukowicz.http.client.HttpCall;
+import io.github.piotr_janczukowicz.http.uri.HttpUris;
 import io.github.piotr_janczukowicz.json.JsonCodec;
 import io.github.piotr_janczukowicz.json.JsonType;
 import io.github.piotr_janczukowicz.pagination.PaginationConfiguration;
 import java.io.IOException;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -106,6 +109,26 @@ public final class GitHubCaller extends AbstractHttpCaller {
                 .withHeader(
                         HttpHeaderNames.AUTHORIZATION,
                         credentials.authentication().headerValue());
+    }
+
+    /**
+     * {@code call}, a call to an API path, aimed at the uploads origin of this caller's client instead:
+     * {@code uploads.github.com} for github.com, {@code uploads.SUBDOMAIN.ghe.com} for a data-residency host, the
+     * {@code /api/uploads/} path for a GitHub Enterprise Server host. Method, query, headers and body stay as they are.
+     *
+     * @param call call whose path is relative to the API base
+     * @return the same call aimed at the uploads origin
+     * @throws NullPointerException if {@code call} is {@code null}
+     * @throws IllegalArgumentException if {@code call} targets an absolute URI
+     * @throws UnsupportedOperationException if the client's base has no known uploads origin
+     */
+    public HttpCall uploadCall(final HttpCall call) {
+        requireNonNull(call, "call");
+        final URI uploads = new GitHubApiBase(client.baseUri())
+                .uploadsUri()
+                .orElseThrow(() -> new UnsupportedOperationException("the API base has no known uploads origin"));
+        final URI target = HttpUris.resolveApiPath(uploads, call.requirePath(), Map.of());
+        return new HttpCall(call.method(), new HttpCall.AbsoluteUri(target), call.query(), call.headers(), call.body());
     }
 
     /**
