@@ -114,7 +114,8 @@ public final class GitHubCaller extends AbstractHttpCaller {
     /**
      * {@code call}, a call to an API path, aimed at the uploads origin of this caller's client instead:
      * {@code uploads.github.com} for github.com, {@code uploads.SUBDOMAIN.ghe.com} for a data-residency host, the
-     * {@code /api/uploads/} path for a GitHub Enterprise Server host. Method, query, headers and body stay as they are.
+     * {@code /api/uploads/} path for a GitHub Enterprise Server host, or the uploads base set in the client's
+     * configuration. Method, query, headers and body stay as they are.
      *
      * @param call call whose path is relative to the API base
      * @return the same call aimed at the uploads origin
@@ -124,8 +125,7 @@ public final class GitHubCaller extends AbstractHttpCaller {
      */
     public HttpCall uploadCall(final HttpCall call) {
         requireNonNull(call, "call");
-        final URI uploads = new GitHubApiBase(client.baseUri())
-                .uploadsUri()
+        final URI uploads = client.uploadsUri()
                 .orElseThrow(() -> new UnsupportedOperationException("the API base has no known uploads origin"));
         final URI target = HttpUris.resolveApiPath(uploads, call.requirePath(), Map.of());
         return new HttpCall(call.method(), new HttpCall.AbsoluteUri(target), call.query(), call.headers(), call.body());

@@ -49,6 +49,29 @@ class GitHubCallerUploadTest {
     }
 
     @Test
+    void uploadCall_shouldAimAtTheConfiguredUploadsBase_whenSet() {
+        final GitHubClientConfiguration configuration = GitHubClientConfiguration.builder()
+                .configuration(TestClients.configuration(URI.create("http://localhost:8080/")))
+                .uploadsUri(URI.create("http://localhost:9090/"))
+                .build();
+        final GitHubCaller caller =
+                GitHubCaller.of(TestGitHubClients.defaultStack(HttpTransportMocks.mock(), configuration));
+
+        final HttpCall uploads = caller.uploadCall(HttpCall.of(HttpMethod.POST, ASSETS));
+
+        assertThat(uploads.target()).isEqualTo(new HttpCall.AbsoluteUri(URI.create("http://localhost:9090" + ASSETS)));
+    }
+
+    @Test
+    void build_shouldThrow_whenUploadsUriIsNotAnHttpUri() {
+        final GitHubClientConfiguration.Builder builder =
+                GitHubClientConfiguration.builder().uploadsUri(URI.create("ftp://host/"));
+
+        assertThat(catchThrowable(builder::build)).isInstanceOf(IllegalArgumentException.class);
+        assertThat(GitHubClientConfiguration.defaults().uploadsUri()).isEmpty();
+    }
+
+    @Test
     void uploadCall_shouldThrow_whenBaseHasNoUploadsOrigin() {
         final GitHubCaller caller = caller(URI.create("http://localhost:8080/"));
         final HttpCall call = HttpCall.of(HttpMethod.POST, ASSETS);

@@ -46,6 +46,7 @@ public final class DefaultGitHubClient extends HttpClient implements GitHubClien
     private final @Nullable GitHubFlavor flavor;
     private final @Nullable GhesVersion ghesVersion;
     private final @Nullable GitHubClient management;
+    private final @Nullable URI uploadsUri;
 
     /**
      * Client over the given parts; {@link Builder#build()} uses it.
@@ -56,6 +57,7 @@ public final class DefaultGitHubClient extends HttpClient implements GitHubClien
      * @param flavor flavor to enforce, or {@code null} to allow every method
      * @param ghesVersion release of a {@link GitHubFlavor#GHES} client, or {@code null}
      * @param management console view of a GitHub Enterprise Server client, or {@code null}
+     * @param uploadsUri configured uploads base, or {@code null} to derive it from the base URI
      * @throws NullPointerException if {@code http}, {@code pagination} or {@code rateLimits} is {@code null}
      */
     DefaultGitHubClient(
@@ -64,13 +66,20 @@ public final class DefaultGitHubClient extends HttpClient implements GitHubClien
             final GitHubRateLimitTracker rateLimits,
             final @Nullable GitHubFlavor flavor,
             final @Nullable GhesVersion ghesVersion,
-            final @Nullable GitHubClient management) {
+            final @Nullable GitHubClient management,
+            final @Nullable URI uploadsUri) {
         super(http);
         this.pagination = requireNonNull(pagination, "pagination");
         this.rateLimits = requireNonNull(rateLimits, "rateLimits");
         this.flavor = flavor;
         this.ghesVersion = ghesVersion;
         this.management = management;
+        this.uploadsUri = uploadsUri;
+    }
+
+    @Override
+    public Optional<URI> uploadsUri() {
+        return uploadsUri != null ? Optional.of(uploadsUri) : new GitHubApiBase(baseUri()).uploadsUri();
     }
 
     @Override
@@ -145,6 +154,7 @@ public final class DefaultGitHubClient extends HttpClient implements GitHubClien
         private boolean isInsecureHttpAllowed;
         private @Nullable GitHubFlavor flavor;
         private @Nullable GhesVersion ghesVersion;
+        private @Nullable URI uploadsUri;
         private Clock clock = Clock.systemUTC();
 
         private Builder(
@@ -258,6 +268,18 @@ public final class DefaultGitHubClient extends HttpClient implements GitHubClien
         }
 
         /**
+         * The base that uploads are sent to, see {@link GitHubClientConfiguration#uploadsUri()}.
+         *
+         * @param uploadsUri absolute http or https base URI
+         * @return this builder
+         * @throws NullPointerException if {@code uploadsUri} is {@code null}
+         */
+        public Builder uploadsUri(final URI uploadsUri) {
+            this.uploadsUri = requireNonNull(uploadsUri, "uploadsUri");
+            return this;
+        }
+
+        /**
          * Builds the client. A failed build, whether a setting is refused or the client cannot be constructed, closes
          * the transport first, so a failed build of a root client leaves nothing open for the caller to release.
          *
@@ -279,12 +301,16 @@ public final class DefaultGitHubClient extends HttpClient implements GitHubClien
                         .log();
                 return new DefaultGitHubClient(
                         httpBuilder(
-                                tracker, configuration.baseUri(), new GitHubOriginGuard(configuration.baseUri()), auth),
+                                tracker,
+                                configuration.baseUri(),
+                                new GitHubOriginGuard(configuration.baseUri(), uploadsUri),
+                                auth),
                         pagination,
                         tracker,
                         flavor,
                         ghesVersion,
-                        managementView(tracker));
+                        managementView(tracker),
+                        uploadsUri);
             } catch (final RuntimeException failed) {
                 LOG.atDebug()
                         .setMessage("Building the GitHub client failed with {}: {}; the transport is closed")
@@ -312,6 +338,9 @@ public final class DefaultGitHubClient extends HttpClient implements GitHubClien
         private void requireBuildable() {
             requireNonNull(userAgent, USER_AGENT_PARAMETER);
             HttpUris.requireSecureOrAllowed(configuration.baseUri(), "GitHub", isInsecureHttpAllowed);
+            if (uploadsUri != null) {
+                HttpUris.requireSecureOrAllowed(uploadsUri, "GitHub uploads", isInsecureHttpAllowed);
+            }
         }
 
         // The console of a GHES host, https://HOST/manage/v1/: the same stack, an origin guard of its own and no auth.
@@ -328,6 +357,7 @@ public final class DefaultGitHubClient extends HttpClient implements GitHubClien
                     tracker,
                     flavor,
                     ghesVersion,
+                    null,
                     null);
         }
 

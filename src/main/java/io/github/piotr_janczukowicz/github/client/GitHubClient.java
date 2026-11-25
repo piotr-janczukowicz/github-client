@@ -7,6 +7,7 @@ import io.github.piotr_janczukowicz.http.client.HttpClientExecutor;
 import io.github.piotr_janczukowicz.http.client.authentication.AuthenticationProvider;
 import io.github.piotr_janczukowicz.pagination.PaginationConfiguration;
 import java.io.IOException;
+import java.net.URI;
 import java.util.Map;
 import java.util.Optional;
 
@@ -114,6 +115,15 @@ public sealed interface GitHubClient extends HttpClientExecutor, AutoCloseable p
      * @return the release, or empty if the client is not a {@link GitHubFlavor#GHES} client
      */
     Optional<GhesVersion> ghesVersion();
+
+    /**
+     * The base that uploads are sent to: the one set with {@link GitHubClientConfiguration.Builder#uploadsUri(URI)}, or
+     * else the one the base URI implies ({@code https://uploads.github.com/},
+     * {@code https://uploads.SUBDOMAIN.ghe.com/}, {@code https://HOST/api/uploads/}).
+     *
+     * @return the uploads base URI, or empty if none is set and the base URI implies none
+     */
+    Optional<URI> uploadsUri();
 
     /**
      * The view of this client that talks to the GitHub Enterprise Server management console,

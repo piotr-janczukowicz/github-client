@@ -348,4 +348,48 @@ class GitHubOriginGuardTest {
 
         assertThat(thrown).isInstanceOf(HttpOriginViolationException.class);
     }
+
+    @Test
+    void requireTarget_shouldAllowPostToConfiguredUploads_whenOriginMatches() {
+        final GitHubOriginGuard guard =
+                new GitHubOriginGuard(URI.create("http://127.0.0.1:8080/"), URI.create("http://127.0.0.1:9090/up/"));
+        final ParsedUrl upload = ParsedUrl.of(URI.create("http://127.0.0.1:9090/up/repos/o/r/releases/1/assets"));
+        final ParsedUrl elsewhere = ParsedUrl.of(URI.create("http://127.0.0.1:9090/other"));
+
+        assertThat(guard.requireTarget(HttpMethod.POST, upload)).isSameAs(upload);
+        assertThat(catchThrowable(() -> guard.requireTarget(HttpMethod.GET, upload)))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThat(catchThrowable(() -> guard.requireTarget(HttpMethod.POST, elsewhere)))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void requireTarget_shouldRejectDotSegments_whenConfiguredUploadsTargetIsRawUri() {
+        final GitHubOriginGuard guard =
+                new GitHubOriginGuard(URI.create("http://127.0.0.1:8080/"), URI.create("http://127.0.0.1:9090/up/"));
+        final URI raw = URI.create("http://127.0.0.1:9090/up/../x");
+
+        assertThat(catchThrowable(() -> guard.requireTarget(HttpMethod.POST, raw, ParsedUrl.of(raw))))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"https://127.0.0.1:9090/up/x", "http://127.0.0.2:9090/up/x", "http://127.0.0.1:9091/up/x"})
+    void requireTarget_shouldRejectPost_whenOriginDiffersFromConfiguredUploads(final String target) {
+        final GitHubOriginGuard guard =
+                new GitHubOriginGuard(URI.create("http://127.0.0.1:8080/"), URI.create("http://127.0.0.1:9090/up/"));
+
+        assertThat(catchThrowable(() -> guard.requireTarget(HttpMethod.POST, ParsedUrl.of(URI.create(target)))))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void requireTarget_shouldAllowRawUriPost_whenConfiguredUploadsMatch() {
+        final GitHubOriginGuard guard =
+                new GitHubOriginGuard(URI.create("http://127.0.0.1:8080/"), URI.create("http://127.0.0.1:9090/up/"));
+        final URI raw = URI.create("http://127.0.0.1:9090/up/x");
+        final ParsedUrl parsed = ParsedUrl.of(raw);
+
+        assertThat(guard.requireTarget(HttpMethod.POST, raw, parsed)).isSameAs(parsed);
+    }
 }

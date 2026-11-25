@@ -60,6 +60,7 @@ public final class GitHubClientConfiguration {
     private final @Nullable GitHubFlavor flavor;
     private final @Nullable GhesVersion ghesVersion;
     private final PaginationConfiguration pagination;
+    private final @Nullable URI uploadsUri;
 
     private GitHubClientConfiguration(
             final HttpClientConfiguration configuration,
@@ -74,7 +75,8 @@ public final class GitHubClientConfiguration {
             final boolean isInsecureHttpAllowed,
             final @Nullable GitHubFlavor flavor,
             final @Nullable GhesVersion ghesVersion,
-            final PaginationConfiguration pagination) {
+            final PaginationConfiguration pagination,
+            final @Nullable URI uploadsUri) {
         this.configuration = configuration;
         this.transport = transport;
         this.retry = retry;
@@ -88,6 +90,7 @@ public final class GitHubClientConfiguration {
         this.flavor = flavor;
         this.ghesVersion = ghesVersion;
         this.pagination = pagination;
+        this.uploadsUri = uploadsUri;
     }
 
     /**
@@ -239,6 +242,15 @@ public final class GitHubClientConfiguration {
         return pagination;
     }
 
+    /**
+     * The origin that uploads are sent to, instead of the one derived from the base URI.
+     *
+     * @return the uploads base URI, or empty if uploads go to the origin the base URI implies
+     */
+    public Optional<URI> uploadsUri() {
+        return Optional.ofNullable(uploadsUri);
+    }
+
     /** Builds a {@link GitHubClientConfiguration}. Unset fields keep the {@link #defaults()} values. */
     public static final class Builder {
         private HttpClientConfiguration configuration =
@@ -256,6 +268,7 @@ public final class GitHubClientConfiguration {
         private @Nullable GitHubFlavor flavor;
         private @Nullable GhesVersion ghesVersion;
         private PaginationConfiguration pagination = PaginationConfiguration.defaults();
+        private @Nullable URI uploadsUri;
 
         private Builder() {}
 
@@ -437,6 +450,21 @@ public final class GitHubClientConfiguration {
         }
 
         /**
+         * The base that uploads are sent to, for a deployment whose uploads origin the base URI does not imply, such as
+         * a proxy or a local stub. Uploads then go to this origin, and a POST to it passes the origin guard. Defaults
+         * to none: the uploads origin follows from the base URI ({@code uploads.github.com},
+         * {@code uploads.SUBDOMAIN.ghe.com}, or {@code /api/uploads/} of a GitHub Enterprise Server host). A plain
+         * {@code http} uploads URI on a host other than loopback needs {@link #allowInsecureHttp(boolean)}.
+         *
+         * @param uploadsUri absolute http or https base URI, or {@code null} to derive it from the base URI
+         * @return this builder
+         */
+        public Builder uploadsUri(final @Nullable URI uploadsUri) {
+            this.uploadsUri = uploadsUri;
+            return this;
+        }
+
+        /**
          * Validates and builds the configuration.
          *
          * @return configuration
@@ -446,7 +474,7 @@ public final class GitHubClientConfiguration {
          *     limit is below one, {@code retry} does not retry rate-limited responses, does not coordinate rate limits,
          *     or allows fewer than two rate-limit attempts; or if the {@link GitHubFlavor#GHES} flavor lacks a
          *     supported {@link #ghesVersion(GhesVersion)} or a base URI with the path {@code /api/v3/}, or a release is
-         *     set for another flavor
+         *     set for another flavor, or if the uploads URI is not an absolute http or https URI
          */
         public GitHubClientConfiguration build() {
             requireNonNull(configuration, "configuration");
@@ -465,6 +493,7 @@ public final class GitHubClientConfiguration {
             requireAtLeast(conditionalCacheMaxBodyBytes, 1, "conditionalCacheMaxBodyBytes");
             requireAtLeast(conditionalCacheMaxBytes, 1L, "conditionalCacheMaxBytes");
             requireGhesSettings();
+            requireUploadsUri();
             return new GitHubClientConfiguration(
                     configuration,
                     transport,
@@ -478,7 +507,20 @@ public final class GitHubClientConfiguration {
                     isInsecureHttpAllowed,
                     flavor,
                     ghesVersion,
-                    pagination);
+                    pagination,
+                    uploadsUri);
+        }
+
+        private void requireUploadsUri() {
+            if (uploadsUri == null) {
+                return;
+            }
+            final String scheme = uploadsUri.getScheme();
+            if (!("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme))
+                    || uploadsUri.getHost() == null) {
+                throw new IllegalArgumentException("uploadsUri must be an absolute http or https URI, but is: "
+                        + HttpUris.describeSafe(uploadsUri));
+            }
         }
 
         private void requireGhesSettings() {

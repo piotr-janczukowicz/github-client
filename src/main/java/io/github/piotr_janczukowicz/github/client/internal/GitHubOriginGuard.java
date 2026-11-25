@@ -14,10 +14,22 @@ public final class GitHubOriginGuard extends HttpOriginGuard {
     private static final String HTTPS = "https";
 
     private final GitHubApiBase apiBase;
+    private final @Nullable URI uploadsUri;
 
     GitHubOriginGuard(final URI baseUri) {
+        this(baseUri, null);
+    }
+
+    /**
+     * Guard of {@code baseUri} that also lets a POST reach {@code uploadsUri}.
+     *
+     * @param baseUri API base URI
+     * @param uploadsUri uploads base that replaces the one {@code baseUri} implies, or {@code null} for none
+     */
+    GitHubOriginGuard(final URI baseUri, final @Nullable URI uploadsUri) {
         super(baseUri);
         apiBase = new GitHubApiBase(baseUri);
+        this.uploadsUri = uploadsUri;
     }
 
     @Override
@@ -26,7 +38,8 @@ public final class GitHubOriginGuard extends HttpOriginGuard {
         requireNonNull(uri, "uri");
         if (method == HttpMethod.POST
                 && parsed != null
-                && (isUploadsOrigin(parsed) || !hasDotSegments(uri) && isGhesApiUploadsPath(parsed))) {
+                && (isUploadsOrigin(parsed)
+                        || !hasDotSegments(uri) && (isGhesApiUploadsPath(parsed) || isConfiguredUploads(parsed)))) {
             return parsed;
         }
         return super.requireTarget(method, uri, parsed);
@@ -54,7 +67,7 @@ public final class GitHubOriginGuard extends HttpOriginGuard {
      */
     ParsedUrl allowUploadPost(final ParsedUrl url) {
         requireNonNull(url, "url");
-        if (isUploadsOrigin(url) || isGhesApiUploadsPath(url)) {
+        if (isUploadsOrigin(url) || isGhesApiUploadsPath(url) || isConfiguredUploads(url)) {
             return url;
         }
         return requireApiTarget(url);
@@ -68,6 +81,17 @@ public final class GitHubOriginGuard extends HttpOriginGuard {
                 && scheme.equalsIgnoreCase(actual.scheme())
                 && uploadsHost.equalsIgnoreCase(actual.host())
                 && port == actual.port();
+    }
+
+    private boolean isConfiguredUploads(final ParsedUrl actual) {
+        if (uploadsUri == null) {
+            return false;
+        }
+        final ParsedUrl configured = ParsedUrl.of(uploadsUri);
+        return configured.scheme().equalsIgnoreCase(actual.scheme())
+                && configured.host().equalsIgnoreCase(actual.host())
+                && configured.port() == actual.port()
+                && actual.encodedPath().startsWith(configured.encodedPath());
     }
 
     private boolean isGhesApiUploadsPath(final ParsedUrl actual) {

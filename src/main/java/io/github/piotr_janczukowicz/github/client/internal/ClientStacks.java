@@ -111,6 +111,7 @@ public final class ClientStacks {
         }
         configuration.flavor().ifPresent(builder::flavor);
         configuration.ghesVersion().ifPresent(builder::ghesVersion);
+        configuration.uploadsUri().ifPresent(builder::uploadsUri);
         builder.pagination(configuration.pagination());
         final HttpCallObserver observer = configuration.callObserver();
         if (observer != null) {
